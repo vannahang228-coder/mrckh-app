@@ -1,0 +1,3097 @@
+<!DOCTYPE html>
+<html lang="km" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MRC KH - ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក អវត្តមាន និងលក់ទំនិញ POS Node.js Express និង SQLite">
+  <title>MRC KH - ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក អវត្តមាន និងលក់ទំនិញ POS</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  
+  <!-- Google Fonts: Kantumruy Pro & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="lang-km">
+
+  <div class="app-container">
+    
+    <!-- ================= Main Header ================= -->
+    <header class="main-header">
+      <div class="brand-section">
+        <div class="brand-logo-wrapper">
+          <img src="logo.png" alt="MRC KH Logo" class="brand-logo-img">
+          <span class="brand-logo-glow"></span>
+        </div>
+        <div class="brand-info">
+          <h1>
+            <span>MRC KH</span>
+            <span class="brand-tag" data-i18n="appBadge">ប្រព័ន្ធគ្រប់គ្រងបុគ្គលិក & POS</span>
+          </h1>
+          <p data-i18n="appSubtitle">គ្រប់គ្រងព័ត៌មានបុគ្គលិក វត្តមាន-អវត្តមាន និងការលក់ទំនិញ POS យ៉ាងមានប្រសិទ្ធភាព</p>
+        </div>
+      </div>
+
+      <!-- Live System Status & Clock Center Ticker -->
+      <div class="header-status-widget">
+        <div class="system-status-pill" title="SQLite WAL Engine Active">
+          <span class="pulse-dot"></span>
+          <span data-i18n="systemOnline">ប្រព័ន្ធដំណើរការស្រួល</span>
+        </div>
+        <div class="live-clock-pill">
+          <span id="liveClockTime">--:--:--</span>
+          <span class="clock-divider">|</span>
+          <span id="liveClockDate">----/--/--</span>
+        </div>
+        <div class="exchange-rate-pill" title="Exchange Rate">
+          <span>💵 $1 = 4,100៛</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Action Trigger (Contextual: Add Employee or Request Leave) -->
+        <button id="btnHeaderAction" class="btn btn-primary">
+          <span>➕</span>
+          <span id="btnHeaderActionText" data-i18n="btnAddEmployee">បន្ថែមបុគ្គលិក</span>
+        </button>
+
+        <!-- Export CSV Button -->
+        <button id="btnExportCsv" class="btn btn-secondary" title="Export as CSV">
+          <span>📥</span>
+          <span data-i18n="btnExportCsv">ទាញយកជា CSV</span>
+        </button>
+
+        <!-- Reset Demo Data -->
+        <button id="btnResetDemo" class="btn btn-secondary" title="Reset Demo Data">
+          <span>🔄</span>
+          <span data-i18n="btnResetDemo">កំណត់ទិន្នន័យគំរូ</span>
+        </button>
+
+        <!-- Shortcuts Guide Modal Trigger -->
+        <button id="btnShortcutsGuide" class="btn btn-icon" title="Keyboard Shortcuts (Ctrl+/)">
+          ⌨️
+        </button>
+
+        <!-- Language Toggle -->
+        <button id="langToggleBtn" class="lang-switch-btn" title="Switch Language">
+          <span>🇬🇧</span>
+          <span class="lang-text" data-i18n="langToggle">English</span>
+        </button>
+
+        <!-- Theme Toggle (Dark/Light) -->
+        <button id="themeToggleBtn" class="btn btn-icon" title="Toggle Dark/Light Mode">
+          ☀️
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= Main Navigation Tabs ================= -->
+    <nav class="nav-tabs-wrapper" aria-label="Main Navigation">
+      <button id="tabDashboard" class="nav-tab-btn active">
+        <span data-i18n="navDashboard">📊 ផ្ទាំងគ្រប់គ្រងទូទៅ</span>
+      </button>
+      <button id="tabSales" class="nav-tab-btn">
+        <span data-i18n="navSales">🛒 ការលក់ & POS</span>
+        <span id="tabBadgeCart" class="nav-tab-badge badge-cart" style="display: none;">0</span>
+      </button>
+      <button id="tabEmployees" class="nav-tab-btn">
+        <span data-i18n="navEmployees">👥 បញ្ជីបុគ្គលិក</span>
+        <span id="tabBadgeEmployees" class="nav-tab-badge">0</span>
+      </button>
+      <button id="tabAttendance" class="nav-tab-btn">
+        <span data-i18n="navAttendance">🕒 វត្តមាន & ម៉ោងចូល-ចេញ</span>
+        <span id="tabBadgeAttendance" class="nav-tab-badge badge-warning" style="display: none;">0</span>
+      </button>
+      <button id="tabLeaves" class="nav-tab-btn">
+        <span data-i18n="navLeaves">📅 ច្បាប់សម្រាក</span>
+        <span id="tabBadgeLeaves" class="nav-tab-badge badge-warning" style="display: none;">0</span>
+      </button>
+      <button id="tabCustomers" class="nav-tab-btn">
+        <span data-i18n="navCustomers">🤝 អតិថិជន & CRM</span>
+        <span id="tabBadgeCustomers" class="nav-tab-badge">0</span>
+      </button>
+      <button id="tabFinance" class="nav-tab-btn">
+        <span data-i18n="navFinance">💸 ចំណាយ & ប្រាក់ខែ</span>
+      </button>
+      <button id="tabSettings" class="nav-tab-btn">
+        <span data-i18n="navSettings">⚙️ ការកំណត់</span>
+      </button>
+    </nav>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 0: EXECUTIVE DASHBOARD & ANALYTICS -->
+    <!-- ############################################################# -->
+    <div id="dashboardSection">
+      <!-- Dashboard KPI Summary Cards -->
+      <section class="stats-grid" aria-label="Executive KPI Overview">
+        <div class="stat-card stat-card-sales-month">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="dashGrossSales">ចំណូលលក់សរុប (Revenue)</span>
+            <span id="dashStatRevenue" class="stat-value">$0.00</span>
+            <span class="stat-subtext">
+              <span>📈</span> <span id="dashStatOrdersCount">0 ការបញ្ជាទិញ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-sales-month">💵</div>
+        </div>
+
+        <div class="stat-card stat-card-total-profit">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="dashNetProfit">ប្រាក់ចំណេញសុទ្ធ (Net Profit)</span>
+            <span id="dashStatProfit" class="stat-value profit-value" style="color: #10b981;">+$0.00</span>
+            <span class="stat-subtext">
+              <span>🏆</span> <span id="dashStatProfitMargin">អត្រាចំណេញ 0%</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total-profit">💎</div>
+        </div>
+
+        <div class="stat-card stat-card-payroll">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="dashTotalExpenses">ចំណាយប្រតិបត្តិការ (Expenses)</span>
+            <span id="dashStatExpenses" class="stat-value" style="color: #f59e0b;">$0.00</span>
+            <span class="stat-subtext">
+              <span>🏢</span> <span>ចំណាយហាង & ប្រាក់ខែ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-payroll">💸</div>
+        </div>
+
+        <div class="stat-card stat-card-active">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="dashActiveCustomers">អតិថិជនសរុប (Customers)</span>
+            <span id="dashStatCustomers" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>🤝</span> <span id="dashStatStaffCount">12 បុគ្គលិកសកម្ម</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-active">👥</div>
+        </div>
+      </section>
+
+      <!-- SVG Charts Row -->
+      <div class="dashboard-charts-grid">
+        <!-- 7-Day Revenue Trend Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="dash7DaySales">និន្នាការចំណូល ៧ ថ្ងៃចុងក្រោយ</h3>
+              <p class="chart-sub" id="dashTrendSubtitle">ប្រាក់ចំណូល និងបរិមាណលក់ប្រចាំថ្ងៃ</p>
+            </div>
+            <span class="chart-badge">7 Days Live</span>
+          </div>
+          <div class="chart-svg-container" id="chartRevenueTrendContainer">
+            <div class="chart-loading">កំពុងផ្ទុកទិន្នន័យក្រាហ្វិក...</div>
+          </div>
+        </div>
+
+        <!-- 6-Month Comparison Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="dashMonthlyPerformance">ប្រៀបធៀបចំណូលប្រចាំខែ</h3>
+              <p class="chart-sub">ប្រៀបធៀបប្រាក់ចំណូល និងចំណេញ ៦ ខែចុងក្រោយ</p>
+            </div>
+            <span class="chart-badge">Monthly Growth</span>
+          </div>
+          <div class="chart-svg-container" id="chartMonthlyBarContainer">
+            <div class="chart-loading">កំពុងផ្ទុកទិន្នន័យក្រាហ្វិក...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary Analytics Row: Top Products, Payments, Recent Activities -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 24px;">
+        <!-- Top Products Leaderboard -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="dashTopProducts">ទំនិញលក់ដាច់បំផុត (Top 5 Products)</h3>
+              <p class="chart-sub">ចំណាត់ថ្នាក់តាមចំនួន និងចំណូល</p>
+            </div>
+            <span>🏆</span>
+          </div>
+          <div id="dashTopProductsList" class="top-products-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Payment Methods & Staff Breakdown -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="dashPaymentBreakdown">វិធីទូទាត់ប្រាក់ & ដេប៉ាតឺម៉ង់</h3>
+              <p class="chart-sub">ការបែងចែកចំណូល និងធនធានមនុស្ស</p>
+            </div>
+            <span>💳</span>
+          </div>
+          <div style="padding: 10px 0;">
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-subtle); margin-bottom: 8px;" data-i18n="dashPaymentBreakdown">វិធីទូទាត់ប្រាក់</div>
+            <div id="dashPaymentBreakdown" class="payment-methods-breakdown">
+              <!-- Populated dynamically -->
+            </div>
+            <div style="border-top: 1px dashed var(--border-color); margin: 16px 0 12px 0;"></div>
+            <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-subtle); margin-bottom: 8px;" data-i18n="dashStaffDistribution">បុគ្គលិកតាមដេប៉ាតឺម៉ង់</div>
+            <div id="dashDeptBreakdown" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activities Feed -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 data-i18n="dashRecentActivity">សកម្មភាពថ្មីៗក្នុងប្រព័ន្ធ</h3>
+              <p class="chart-sub">កត់ត្រាការលក់ ស្តុក និងការសុំច្បាប់</p>
+            </div>
+            <span>⚡</span>
+          </div>
+          <div id="dashRecentActivityList" style="display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 1: EMPLOYEES DIRECTORY -->
+    <!-- ############################################################# -->
+    <div id="employeesSection" style="display: none;">
+      <!-- Employees KPI Metrics Overview -->
+      <section class="stats-grid" aria-label="Employee Statistics">
+        <div class="stat-card stat-card-total">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="totalEmployees">បុគ្គលិកសរុប</span>
+            <span id="statTotal" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>✨</span> <span data-i18n="statsActiveRatio">កំពុងបម្រើការងារ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total">👥</div>
+        </div>
+
+        <div class="stat-card stat-card-active">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="activeEmployees">បុគ្គលិកពេញសិទ្ធិ</span>
+            <span id="statActive" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>🟢</span> <span data-i18n="statsActiveRatio">ពេញសិទ្ធិផ្លូវការ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-active">💼</div>
+        </div>
+
+        <div class="stat-card stat-card-dept">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="departmentsCount">ដេប៉ាតឺម៉ង់សរុប</span>
+            <span id="statDeptCount" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>🏢</span> <span>ផ្នែកប្រតិបត្តិការ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-dept">🏛️</div>
+        </div>
+
+        <div class="stat-card stat-card-payroll">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="monthlyPayroll">ប្រាក់បៀវត្សរ៍សរុប/ខែ</span>
+            <span id="statPayroll" class="stat-value">$0</span>
+            <span class="stat-subtext">
+              <span>💵</span> <span>ចំណាយបៀវត្សរ៍ប្រចាំខែ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-payroll">💰</div>
+        </div>
+      </section>
+
+      <!-- Employee Controls Toolbar -->
+      <section class="controls-card">
+        <div class="controls-row">
+          <div class="search-box-wrapper">
+            <span class="search-icon-left">🔍</span>
+            <input 
+              type="text" 
+              id="searchInput" 
+              class="search-input" 
+              placeholder="ស្វែងរកតាមឈ្មោះ, អត្តលេខ, អ៊ីមែល, តួនាទី... (ចុច /)"
+              data-i18n-placeholder="searchPlaceholder"
+              autocomplete="off"
+            >
+            <button id="searchClearBtn" class="search-clear-btn" title="Clear Search">✕</button>
+          </div>
+
+          <div class="filter-group">
+            <select id="filterDept" class="custom-select" aria-label="Department Filter">
+              <option value="all" data-i18n="allDepartments">គ្រប់ដេប៉ាតឺម៉ង់</option>
+              <option value="IT & Engineering">ព័ត៌មានវិទ្យា & វិស្វកម្ម (IT)</option>
+              <option value="Human Resources">ធនធានមនុស្ស (HR)</option>
+              <option value="Finance & Accounting">ហិរញ្ញវត្ថុ & គណនេយ្យ</option>
+              <option value="Marketing & Sales">ទីផ្សារ & លក់</option>
+              <option value="Operations">ប្រតិបត្តិការ (Operations)</option>
+            </select>
+
+            <select id="filterStatus" class="custom-select" aria-label="Status Filter">
+              <option value="all" data-i18n="allStatuses">គ្រប់ស្ថានភាព</option>
+              <option value="Active" data-i18n="statusActive">ពេញសិទ្ធិ (Active)</option>
+              <option value="Probation" data-i18n="statusProbation">សាកល្បង (Probation)</option>
+              <option value="On Leave" data-i18n="statusOnLeave">ឈប់សម្រាក (On Leave)</option>
+              <option value="Resigned" data-i18n="statusResigned">ឈប់បម្រើការងារ (Resigned)</option>
+            </select>
+
+            <select id="sortBySelect" class="custom-select" aria-label="Sort By">
+              <option value="id" data-i18n="sortId">អត្តលេខ (ID)</option>
+              <option value="name" data-i18n="sortName">ឈ្មោះបុគ្គលិក</option>
+              <option value="salary" data-i18n="sortSalary">ប្រាក់បៀវត្សរ៍</option>
+              <option value="hire_date" data-i18n="sortHireDate">កាលបរិច្ឆេទចូល</option>
+            </select>
+
+            <button id="sortOrderBtn" class="btn btn-secondary btn-icon" title="Toggle Sort Direction">
+              <span id="sortOrderIcon">⬇️</span>
+            </button>
+
+            <button id="btnResetFilters" class="btn btn-secondary" title="Reset Filters">
+              <span>🔄</span>
+              <span data-i18n="resetFilters">កំណត់ឡើងវិញ</span>
+            </button>
+
+            <div class="view-switcher">
+              <button id="viewTableBtn" class="view-btn active" title="Table View">
+                <span>📋</span>
+                <span data-i18n="viewTable">តារាង</span>
+              </button>
+              <button id="viewGridBtn" class="view-btn" title="Grid View">
+                <span>🔲</span>
+                <span data-i18n="viewGrid">កាតសង្ខេប</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 0.8rem; color: var(--text-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span id="recordsCountText">រកឃើញ 12 នាក់</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btnOpenAttendanceTab" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem;" title="Attendance & Working Hours">
+              <span>🕒</span> <span data-i18n="btnAttendance">វត្តមាន & ម៉ោងចូល-ចេញ</span>
+            </button>
+            <button id="btnOpenAddEmployeeInline" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem;">
+              <span>➕</span> <span data-i18n="btnAddEmployee">បន្ថែមបុគ្គលិក</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Employee Content: Table & Grid -->
+      <main class="content-section">
+        <div id="tableViewContainer" class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colEmpCode">អត្តលេខ</th>
+                  <th data-i18n="colEmployee">បុគ្គលិក</th>
+                  <th data-i18n="colDeptPos">ដេប៉ាតឺម៉ង់ & តួនាទី</th>
+                  <th data-i18n="colContact">ទំនាក់ទំនង</th>
+                  <th data-i18n="colSalary">ប្រាក់ខែ</th>
+                  <th data-i18n="colHireDate">ថ្ងៃចូលធ្វើការ</th>
+                  <th data-i18n="colStatus">ស្ថានភាព</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="employeeTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="gridViewContainer" style="display: none;">
+          <div id="employeeGrid" class="employee-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">🔍</div>
+          <h3 data-i18n="noEmployeesFound">រកមិនឃើញបុគ្គលិកតាមការស្វែងរកនេះទេ</h3>
+          <p data-i18n="noEmployeesDesc">សូមសាកល្បងផ្លាស់ប្ដូរពាក្យស្វែងរក ឬសម្អាតតម្រងជ្រើសរើស។</p>
+          <button onclick="document.getElementById('btnResetFilters').click()" class="btn btn-secondary">
+            <span data-i18n="btnClearFilters">សម្អាតតម្រងទាំងអស់</span>
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW: ATTENDANCE & WORKING HOURS (ម៉ោងចូល-ចេញ) -->
+    <!-- ############################################################# -->
+    <div id="attendanceSection" style="display: none;">
+      <!-- Attendance KPI Overview -->
+      <section class="stats-grid" aria-label="Attendance Statistics">
+        <div class="stat-card stat-card-total">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="attStatTotalStaff">បុគ្គលិកសកម្មសរុប</span>
+            <span id="attStatTotalStaff" class="stat-value">12</span>
+            <span class="stat-subtext"><span>👥</span> <span id="attStatActiveRatio">ពេញសិទ្ធិ</span></span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total">👥</div>
+        </div>
+
+        <div class="stat-card stat-card-active">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="attStatPresent">វត្តមានថ្ងៃនេះ (Present)</span>
+            <span id="attStatPresent" class="stat-value" style="color: #10b981;">0</span>
+            <span class="stat-subtext"><span>✅</span> <span id="attStatPresentRatio">0% នៃបុគ្គលិកសរុប</span></span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-active">✅</div>
+        </div>
+
+        <div class="stat-card stat-card-dept">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="attStatOnTime">មកទាន់ពេល (On Time)</span>
+            <span id="attStatOnTime" class="stat-value" style="color: #6366f1;">0</span>
+            <span class="stat-subtext"><span>⏰</span> <span>គោរពពេលវេលាល្អ</span></span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-dept">⏰</div>
+        </div>
+
+        <div class="stat-card stat-card-payroll">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="attStatLate">មកយឺត (Late Arrivals)</span>
+            <span id="attStatLate" class="stat-value" style="color: #f59e0b;">0</span>
+            <span class="stat-subtext"><span>⚠️</span> <span>លើសម៉ោងកំណត់</span></span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-payroll">⚠️</div>
+        </div>
+      </section>
+
+      <!-- Quick Clock-In / Clock-Out Action Card -->
+      <section class="controls-card" style="margin-bottom: 24px; border-left: 4px solid #6366f1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+              <span>🕒</span> <span>កត់ត្រាម៉ោងចូល ឬ ម៉ោងចេញជាក់ស្តែង (Quick Clock In / Out)</span>
+            </h3>
+            <p style="margin: 4px 0 0; font-size: 0.82rem; color: var(--text-subtle);">ជ្រើសរើសបុគ្គលិកដើម្បីកត់ត្រាម៉ោងចូលធ្វើការ ឬ ម៉ោងចេញពីធ្វើការ</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="live-clock-pill" style="font-size: 0.85rem;">
+              <span id="attLiveClockTime">--:--:--</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="attendanceClockForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: flex-end;">
+          <div>
+            <label class="form-label">ជ្រើសរើសបុគ្គលិក <span class="req">*</span></label>
+            <select id="attClockEmployeeSelect" class="form-select" required>
+              <option value="">-- ជ្រើសរើសបុគ្គលិក --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">កាលបរិច្ឆេទ & ម៉ោងជាក់ស្តែង</label>
+            <div style="display: flex; gap: 6px;">
+              <input type="date" id="attClockDate" class="form-input" style="flex: 1.2;">
+              <input type="time" id="attClockTime" class="form-input" style="flex: 1;">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">កំណត់ចំណាំ (បើមាន)</label>
+            <input type="text" id="attClockNotes" class="form-input" placeholder="ឧ. ស្ទះចរាចរណ៍, ជួបភ្ញៀវ...">
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btnActionClockIn" class="btn btn-primary" style="flex: 1; background: #10b981; border-color: #10b981; justify-content: center;">
+              <span>🟢</span> <span data-i18n="btnClockIn">ម៉ោងចូល</span>
+            </button>
+            <button type="button" id="btnActionClockOut" class="btn btn-primary" style="flex: 1; background: #f43f5e; border-color: #f43f5e; justify-content: center;">
+              <span>🔴</span> <span data-i18n="btnClockOut">ម៉ោងចេញ</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Attendance Controls & History -->
+      <section class="controls-card">
+        <div class="controls-row">
+          <div class="search-box-wrapper">
+            <span class="search-icon-left">🔍</span>
+            <input type="text" id="attSearchInput" class="search-input" placeholder="ស្វែងរកតាមឈ្មោះ, អត្តលេខ, ដេប៉ាតឺម៉ង់...">
+            <button id="attSearchClearBtn" class="search-clear-btn" title="Clear">✕</button>
+          </div>
+
+          <div class="filter-group">
+            <input type="date" id="filterAttDate" class="custom-select" style="padding: 6px 10px;" title="Filter Date">
+
+            <select id="filterAttStatus" class="custom-select">
+              <option value="all">គ្រប់ស្ថានភាព</option>
+              <option value="On Time">ទាន់ពេល (On Time)</option>
+              <option value="Late">មកយឺត (Late)</option>
+              <option value="Early Leave">ចេញមុនម៉ោង (Early Leave)</option>
+              <option value="Working">កំពុងធ្វើការ (Working)</option>
+            </select>
+
+            <button id="btnResetAttFilters" class="btn btn-secondary" title="Reset Filters">
+              <span>🔄</span> <span data-i18n="resetFilters">កំណត់ឡើងវិញ</span>
+            </button>
+
+            <button id="btnPrintAttendanceReport" class="btn btn-secondary" title="Print Report">
+              <span>🖨️</span> <span data-i18n="btnPrintAttendanceReport">បោះពុម្ពបញ្ជីវត្តមាន</span>
+            </button>
+
+            <button type="button" id="btnOpenAddAttendanceModal" class="btn btn-primary" style="background: linear-gradient(135deg, #4f46e5, #06b6d4); font-weight: 600;" title="Manual Attendance Entry">
+              <span>➕</span> <span data-i18n="btnAddAttendance">កត់ត្រាម៉ោងថ្មី</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 0.8rem; color: var(--text-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span id="attRecordsCountText">រកឃើញ 0 កំណត់ត្រា</span>
+        </div>
+      </section>
+
+      <!-- Attendance Table -->
+      <main class="content-section">
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colEmpCode">អត្តលេខ</th>
+                  <th data-i18n="colEmployee">បុគ្គលិក</th>
+                  <th data-i18n="colDeptPos">ដេប៉ាតឺម៉ង់ & តួនាទី</th>
+                  <th data-i18n="colScheduledShift" style="text-align: center;">វេនកំណត់ (Shift)</th>
+                  <th data-i18n="colCheckIn" style="text-align: center;">ម៉ោងចូល</th>
+                  <th data-i18n="colCheckOut" style="text-align: center;">ម៉ោងចេញ</th>
+                  <th data-i18n="colWorkHours" style="text-align: center;">ម៉ោងសរុប</th>
+                  <th data-i18n="colAttendanceStatus" style="text-align: center;">ស្ថានភាព</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="attEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">🕒</div>
+          <h3>មិនមានទិន្នន័យវត្តមានតាមលក្ខខណ្ឌនេះទេ</h3>
+          <p>សូមជ្រើសរើសបុគ្គលិកខាងលើដើម្បីកត់ត្រាម៉ោងចូល ឬចេញដំបូង។</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 2: ABSENCE & LEAVES MANAGEMENT -->
+    <!-- ############################################################# -->
+    <div id="leavesSection" style="display: none;">
+      <!-- Leaves KPI Metrics Overview -->
+      <section class="stats-grid" aria-label="Absence Statistics">
+        <div class="stat-card stat-card-total">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="totalLeaves">សំណើសុំច្បាប់សរុប</span>
+            <span id="statLeaveTotal" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>📋</span> <span>សំណើសរុបក្នុងប្រព័ន្ធ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total">📑</div>
+        </div>
+
+        <div class="stat-card stat-card-dept">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="pendingLeaves">រង់ចាំការអនុម័ត</span>
+            <span id="statLeavePending" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>⏳</span> <span data-i18n="statsPendingHint">ត្រូវការការត្រួតពិនិត្យពី HR</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-dept">⏳</div>
+        </div>
+
+        <div class="stat-card stat-card-active">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="approvedLeaves">បានអនុម័តរួច</span>
+            <span id="statLeaveApproved" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>✅</span> <span data-i18n="statsApprovedHint">មានការយល់ព្រមត្រឹមត្រូវ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-active">✅</div>
+        </div>
+
+        <div class="stat-card stat-card-payroll">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="absentToday">អវត្តមានថ្ងៃនេះ</span>
+            <span id="statAbsentToday" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>🏖️</span> <span data-i18n="statsAbsentTodayHint">កំពុងសម្រាកច្បាប់ថ្ងៃនេះ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-payroll">🏖️</div>
+        </div>
+      </section>
+
+      <!-- Leaves Controls Toolbar -->
+      <section class="controls-card">
+        <div class="controls-row">
+          <div class="search-box-wrapper">
+            <span class="search-icon-left">🔍</span>
+            <input 
+              type="text" 
+              id="leaveSearchInput" 
+              class="search-input" 
+              placeholder="ស្វែងរកឈ្មោះបុគ្គលិក ឬមូលហេតុសុំច្បាប់..."
+              autocomplete="off"
+            >
+            <button id="leaveSearchClearBtn" class="search-clear-btn" title="Clear Search">✕</button>
+          </div>
+
+          <div class="filter-group">
+            <!-- Filter Leave Status -->
+            <select id="filterLeaveStatus" class="custom-select" aria-label="Leave Status Filter">
+              <option value="all" data-i18n="allLeaveStatuses">គ្រប់ស្ថានភាពសំណើ</option>
+              <option value="Pending" data-i18n="leaveStatusPending">រង់ចាំអនុម័ត (Pending)</option>
+              <option value="Approved" data-i18n="leaveStatusApproved">បានអនុម័ត (Approved)</option>
+              <option value="Rejected" data-i18n="leaveStatusRejected">មិនអនុម័ត (Rejected)</option>
+            </select>
+
+            <!-- Filter Leave Type -->
+            <select id="filterLeaveType" class="custom-select" aria-label="Leave Type Filter">
+              <option value="all" data-i18n="allLeaveTypes">គ្រប់ប្រភេទច្បាប់</option>
+              <option value="Annual Leave" data-i18n="leaveAnnual">ច្បាប់ប្រចាំឆ្នាំ (Annual)</option>
+              <option value="Sick Leave" data-i18n="leaveSick">ច្បាប់ឈឺ (Sick)</option>
+              <option value="Maternity Leave" data-i18n="leaveMaternity">ច្បាប់លំហែមាតុភាព (Maternity)</option>
+              <option value="Personal Leave" data-i18n="leavePersonal">ច្បាប់កិច្ចការផ្ទាល់ខ្លួន (Personal)</option>
+              <option value="Unpaid Leave" data-i18n="leaveUnpaid">ច្បាប់គ្មានប្រាក់ឈ្នួល (Unpaid)</option>
+            </select>
+
+            <!-- Request Leave CTA -->
+            <button id="btnRequestLeaveModal" class="btn btn-primary">
+              <span>➕</span>
+              <span data-i18n="btnRequestLeave">ស្នើសុំច្បាប់ថ្មី</span>
+            </button>
+
+            <!-- Reset Leaves Filter -->
+            <button id="btnResetLeaveFilters" class="btn btn-secondary" title="Reset Filters">
+              <span>🔄</span>
+              <span data-i18n="resetFilters">កំណត់ឡើងវិញ</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 0.8rem; color: var(--text-subtle);">
+          <span id="leavesCountText">រកឃើញសំណើ 7</span>
+        </div>
+      </section>
+
+      <!-- Leaves Table View -->
+      <main class="content-section">
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colLeaveEmp">បុគ្គលិកស្នើសុំ</th>
+                  <th data-i18n="colLeaveType">ប្រភេទច្បាប់</th>
+                  <th data-i18n="colLeaveDuration">កាលបរិច្ឆេទសម្រាក</th>
+                  <th data-i18n="colLeaveDays">ចំនួនថ្ងៃ</th>
+                  <th data-i18n="colLeaveReason">មូលហេតុនៃការសុំច្បាប់</th>
+                  <th data-i18n="colLeaveStatus">ស្ថានភាព</th>
+                  <th data-i18n="colLeaveApprover">អ្នកអនុម័ត</th>
+                  <th style="text-align: right;" data-i18n="colLeaveActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="leaveTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Leaves Empty State -->
+        <div id="leaveEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">📅</div>
+          <h3 data-i18n="noLeavesFound">មិនមានសំណើសុំច្បាប់សម្រាកនៅឡើយទេ</h3>
+          <p data-i18n="noEmployeesDesc">សូមសាកល្បងផ្លាស់ប្ដូរពាក្យស្វែងរក ឬសម្អាតតម្រងជ្រើសរើស។</p>
+          <button onclick="document.getElementById('btnResetLeaveFilters').click()" class="btn btn-secondary">
+            <span data-i18n="btnClearFilters">សម្អាតតម្រងទាំងអស់</span>
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 3: SALES & POS & PROFIT MANAGEMENT -->
+    <!-- ############################################################# -->
+    <div id="salesSection" style="display: none;">
+      <!-- Sales KPI Metrics Overview -->
+      <section class="stats-grid" aria-label="Sales Statistics">
+        <div class="stat-card stat-card-sales-today">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="statSalesToday">ចំណូលលក់ថ្ងៃនេះ</span>
+            <span id="statSalesTodayRev" class="stat-value">$0.00</span>
+            <div class="stat-profit-subbadge">
+              <span class="profit-chip positive" id="statSalesTodayProfitBadge">+$0.00 (0%)</span>
+              <span id="statSalesTodayOrders" style="color: var(--text-subtle); font-size: 0.78rem;">0 orders</span>
+            </div>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-sales-today">⚡</div>
+        </div>
+
+        <div class="stat-card stat-card-sales-month">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="statSalesThisMonth">ចំណូលលក់ខែនេះ</span>
+            <span id="statSalesMonthRev" class="stat-value">$0.00</span>
+            <div class="stat-profit-subbadge">
+              <span class="profit-chip positive" id="statSalesMonthProfitBadge">+$0.00 (0%)</span>
+              <span id="statSalesMonthOrders" style="color: var(--text-subtle); font-size: 0.78rem;">0 orders</span>
+            </div>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-sales-month">📅</div>
+        </div>
+
+        <div class="stat-card stat-card-sales-year">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="statSalesThisYear">ចំណូលលក់ឆ្នាំនេះ</span>
+            <span id="statSalesYearRev" class="stat-value">$0.00</span>
+            <div class="stat-profit-subbadge">
+              <span class="profit-chip positive" id="statSalesYearProfitBadge">+$0.00 (0%)</span>
+              <span id="statSalesYearOrders" style="color: var(--text-subtle); font-size: 0.78rem;">0 orders</span>
+            </div>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-sales-year">🌟</div>
+        </div>
+
+        <div class="stat-card stat-card-total-rev">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="statSalesTotalRevenue">ចំណូលលក់សរុបជារួម</span>
+            <span id="statSalesTotalRev" class="stat-value">$0.00</span>
+            <span class="stat-subtext">
+              <span>📦</span> <span id="statSalesTotalCostSub">ថ្លៃដើមសរុប: $0.00</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total-rev">💰</div>
+        </div>
+
+        <div class="stat-card stat-card-total-profit">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="statSalesTotalProfit">ប្រាក់ចំណេញសុទ្ធសរុប</span>
+            <span id="statSalesTotalProfitVal" class="stat-value profit-value" style="color: #10b981;">+$0.00</span>
+            <span class="stat-subtext">
+              <span>📈</span> <span id="statSalesTotalMarginSub">អត្រាចំណេញជាមធ្យម: 0%</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total-profit">🏆</div>
+        </div>
+      </section>
+
+      <!-- Sales Controls Toolbar -->
+      <section class="controls-card">
+        <div class="controls-row">
+          <div class="search-box-wrapper">
+            <span class="search-icon-left">🔍</span>
+            <input 
+              type="text" 
+              id="salesSearchInput" 
+              class="search-input" 
+              placeholder="ស្វែងរកតាមឈ្មោះទំនិញ, លេខវិក្កយបត្រ, អ្នកលក់, អតិថិជន... (ចុច /)"
+              data-i18n-placeholder="searchSalesPlaceholder"
+              autocomplete="off"
+            >
+            <button id="salesSearchClearBtn" class="search-clear-btn" title="Clear Search">✕</button>
+          </div>
+
+          <div class="filter-group">
+            <!-- Date Filter -->
+            <select id="filterSalesDate" class="custom-select" aria-label="Date Filter">
+              <option value="all" data-i18n="dateFilterAll">គ្រប់កាលបរិច្ឆេទ</option>
+              <option value="today" data-i18n="dateFilterToday">ថ្ងៃនេះ (Today)</option>
+              <option value="yesterday" data-i18n="dateFilterYesterday">ម្សិលមិញ (Yesterday)</option>
+              <option value="this_month" data-i18n="dateFilterThisMonth">ខែនេះ (This Month)</option>
+              <option value="last_month" data-i18n="dateFilterLastMonth">ខែមុន (Last Month)</option>
+              <option value="this_year" data-i18n="dateFilterThisYear">ឆ្នាំនេះ (This Year)</option>
+              <option value="last_year" data-i18n="dateFilterLastYear">ឆ្នាំមុន (Last Year)</option>
+              <option value="custom" data-i18n="dateFilterCustom">ចន្លោះកាលបរិច្ឆេទជាក់លាក់...</option>
+            </select>
+
+            <!-- Custom date range pickers -->
+            <div id="customDateRangeInputs" style="display: none; align-items: center; gap: 6px;">
+              <input type="date" id="salesStartDate" class="custom-select" style="padding: 6px 8px; font-size: 0.85rem;" title="Start Date">
+              <span style="color: var(--text-subtle);">-</span>
+              <input type="date" id="salesEndDate" class="custom-select" style="padding: 6px 8px; font-size: 0.85rem;" title="End Date">
+            </div>
+
+            <!-- Category Filter -->
+            <select id="filterSalesCategory" class="custom-select" aria-label="Category Filter">
+              <option value="all" data-i18n="allCategories">គ្រប់ប្រភេទមុខទំនិញ</option>
+            </select>
+
+            <!-- Seller Filter -->
+            <select id="filterSalesSeller" class="custom-select" aria-label="Seller Filter">
+              <option value="all" data-i18n="allSellers">គ្រប់អ្នកលក់</option>
+            </select>
+
+            <!-- Sort By -->
+            <select id="sortSalesBySelect" class="custom-select" aria-label="Sort Sales By">
+              <option value="date">កាលបរិច្ឆេទ (Date)</option>
+              <option value="total">តម្លៃសរុប (Total Amount)</option>
+              <option value="profit">ប្រាក់ចំណេញ (Net Profit)</option>
+              <option value="quantity">បរិមាណ (Quantity)</option>
+              <option value="product">ឈ្មោះទំនិញ (Product)</option>
+            </select>
+
+            <button id="sortSalesOrderBtn" class="btn btn-secondary btn-icon" title="Toggle Sort Direction">
+              <span id="sortSalesOrderIcon">⬇️</span>
+            </button>
+
+            <button id="btnResetSalesFilters" class="btn btn-secondary" title="Reset Filters">
+              <span>🔄</span>
+              <span data-i18n="resetFilters">កំណត់ឡើងវិញ</span>
+            </button>
+
+            <!-- Sales Sub-views Switcher -->
+            <div class="view-switcher sales-view-switcher">
+              <button id="subViewPosBtn" class="view-btn active" title="POS Register">
+                <span>🛒</span>
+                <span data-i18n="viewSalesPos">ផ្ទាំងគិតលុយ POS</span>
+              </button>
+              <button id="subViewInventoryBtn" class="view-btn" title="Inventory & Stock">
+                <span>📦</span>
+                <span data-i18n="viewSalesInventory">គ្រប់គ្រងស្តុក</span>
+              </button>
+              <button id="subViewInvoicesBtn" class="view-btn" title="Sales Invoices">
+                <span>📋</span>
+                <span data-i18n="viewSalesInvoices">តារាងការលក់</span>
+              </button>
+              <button id="subViewDailyBtn" class="view-btn" title="Daily Summary">
+                <span>📅</span>
+                <span data-i18n="viewSalesDaily">សរុបរាល់ថ្ងៃ</span>
+              </button>
+              <button id="subViewMonthlyBtn" class="view-btn" title="Monthly Summary">
+                <span>📊</span>
+                <span data-i18n="viewSalesMonthly">សរុបប្រចាំខែ</span>
+              </button>
+              <button id="subViewYearlyBtn" class="view-btn" title="Yearly Summary">
+                <span>📈</span>
+                <span data-i18n="viewSalesYearly">សរុបប្រចាំឆ្នាំ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 0.8rem; color: var(--text-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span id="salesRecordsCountText">រកឃើញប្រតិបត្តិការលក់ 12</span>
+          <div style="display: flex; gap: 8px;">
+            <button id="btnOpenAddProductHeader" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem;">
+              <span>📦</span> <span data-i18n="btnAddProduct">បន្ថែមមុខទំនិញថ្មី</span>
+            </button>
+            <button id="btnRecordSaleInline" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem;">
+              <span>➕</span> <span data-i18n="btnRecordSale">ចុះបញ្ជីការលក់ថ្មី</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Sales Views -->
+      <main class="content-section">
+        <!-- 0. Modern POS Multi-Item Register View Container -->
+        <div id="salesPosViewContainer" class="pos-layout-container">
+          <!-- Left: Catalog & Product Selection -->
+          <div class="pos-catalog-panel">
+            <div class="pos-filter-bar">
+              <div class="search-box-wrapper" style="flex: 1; max-width: 320px;">
+                <span class="search-icon-left">🔍</span>
+                <input type="text" id="posProductSearch" class="search-input" placeholder="ស្វែងរកទំនិញ ឬកូដ SKU..." data-i18n-placeholder="searchSalesPlaceholder">
+                <button id="posProductSearchClear" class="search-clear-btn" type="button">✕</button>
+              </div>
+              <div class="pos-category-chips" id="posCategoryChips">
+                <!-- Dynamically populated category chips -->
+              </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="pos-products-grid" id="posProductsGrid">
+              <!-- Dynamically populated product cards -->
+            </div>
+          </div>
+
+          <!-- Right: POS Multi-Item Cart & Live Checkout Panel -->
+          <div class="pos-cart-panel">
+            <div class="pos-cart-header">
+              <div class="pos-cart-title-box">
+                <span style="font-size: 1.25rem;">🛒</span>
+                <h3 data-i18n="posCartTitle" style="margin: 0; font-size: 1.05rem;">កន្ត្រកទំនិញបច្ចុប្បន្ន</h3>
+                <span class="badge" id="posCartItemCountBadge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-weight: 700;">0 មុខ</span>
+              </div>
+              <button type="button" id="btnPosClearCart" class="btn btn-secondary btn-sm" title="Clear Cart" style="padding: 4px 8px; font-size: 0.75rem;">
+                <span>🗑️</span> <span data-i18n="posClearCart">សម្អាត</span>
+              </button>
+            </div>
+
+            <!-- Cart Items List Container -->
+            <div class="pos-cart-items-list" id="posCartItemsList">
+              <!-- Populated dynamically or empty state -->
+            </div>
+
+            <!-- Financial Calculation & Adjustments (Discount & VAT) -->
+            <div class="pos-cart-checkout-box">
+              <!-- Discount Adjustment -->
+              <div class="pos-adjustment-row">
+                <label class="adjustment-label">
+                  <span>🏷️</span> <span data-i18n="posDiscount">បញ្ចុះតម្លៃ</span>:
+                </label>
+                <div class="pos-discount-control">
+                  <div class="btn-group-segmented" style="height: 30px;">
+                    <button type="button" id="btnDiscountFixed" class="receipt-toggle-btn active" data-type="fixed">$</button>
+                    <button type="button" id="btnDiscountPercent" class="receipt-toggle-btn" data-type="percentage">%</button>
+                  </div>
+                  <input type="number" id="posDiscountVal" class="pos-adj-input" min="0" step="any" value="0" placeholder="0">
+                </div>
+              </div>
+
+              <!-- VAT Tax Adjustment -->
+              <div class="pos-adjustment-row">
+                <label class="adjustment-label">
+                  <span>🏛️</span> <span data-i18n="posTax">ពន្ធអាករ (VAT)</span>:
+                </label>
+                <div class="btn-group-segmented" style="height: 30px;">
+                  <button type="button" id="btnTax0" class="receipt-toggle-btn active" data-tax="0">0%</button>
+                  <button type="button" id="btnTax10" class="receipt-toggle-btn" data-tax="10">10%</button>
+                </div>
+              </div>
+
+              <!-- Live Totals Summary Card -->
+              <div class="pos-totals-card">
+                <div class="pos-totals-row">
+                  <span data-i18n="posSubtotal">សរុបរង (Subtotal):</span>
+                  <strong id="posSubtotalVal">$0.00</strong>
+                </div>
+                <div class="pos-totals-row" id="posDiscountRow" style="display: none; color: #f43f5e;">
+                  <span>បញ្ចុះតម្លៃ (<span id="posDiscountTypeLabel">$</span>):</span>
+                  <strong id="posDiscountValText">-$0.00</strong>
+                </div>
+                <div class="pos-totals-row" id="posTaxRow" style="display: none; color: #0284c7;">
+                  <span>ពន្ធអាករ VAT (<span id="posTaxRateLabel">10%</span>):</span>
+                  <strong id="posTaxValText">+$0.00</strong>
+                </div>
+                <div class="pos-totals-row pos-grand-total">
+                  <span data-i18n="posGrandTotal">ទឹកប្រាក់សរុប:</span>
+                  <strong id="posGrandTotalVal">$0.00</strong>
+                </div>
+                <div class="pos-totals-row pos-khr-total">
+                  <span>សរុបជាប្រាក់រៀល:</span>
+                  <strong id="posGrandTotalKHR">0 ៛</strong>
+                </div>
+
+                <!-- Internal Merchant Margin / Profit Live Tracker -->
+                <div class="pos-merchant-tracker" id="posMerchantTracker">
+                  <span>ថ្លៃដើម: <strong id="posTotalCostVal">$0.00</strong></span>
+                  <span>ចំណេញប៉ាន់ស្មាន: <strong id="posTotalProfitVal" style="color: #10b981;">+$0.00 (0%)</strong></span>
+                </div>
+              </div>
+
+              <!-- Cashier & Customer Info in Cart -->
+              <div class="pos-meta-inputs">
+                <div>
+                  <label class="form-label" style="font-size: 0.72rem; margin-bottom: 2px;" data-i18n="colSeller">អ្នកលក់ / Cashier</label>
+                  <input type="text" id="posSellerName" class="form-input form-input-sm" list="sellersDataList" placeholder="ឈ្មោះអ្នកលក់...">
+                </div>
+                <div>
+                  <label class="form-label" style="font-size: 0.72rem; margin-bottom: 2px;" data-i18n="colPayment">វិធីបង់ប្រាក់</label>
+                  <select id="posPaymentMethod" class="form-select form-select-sm">
+                    <option value="ABA KHQR">📱 ស្កេន ABA KHQR</option>
+                    <option value="Cash">💵 សាច់ប្រាក់ (Cash)</option>
+                    <option value="Wing">💸 វីង (Wing)</option>
+                    <option value="Card">💳 កាតធនាគារ (Card)</option>
+                    <option value="Bank Transfer">🏦 ផ្ទេរប្រាក់ (Transfer)</option>
+                  </select>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label" style="font-size: 0.72rem; margin-bottom: 2px;" data-i18n="colCustomer">ឈ្មោះអតិថិជន (Customer Name)</label>
+                  <input type="text" id="posCustomerName" class="form-input form-input-sm" placeholder="ឧ. លោក សុខា, ក្រុមហ៊ុន ស៊ី អិន ភី... (ទុកទំនេរបាន)">
+                </div>
+              </div>
+
+              <!-- Checkout Action Buttons -->
+              <div class="pos-actions-grid">
+                <button type="button" id="btnPosCheckoutOnly" class="btn btn-secondary pos-checkout-btn">
+                  <span>💳</span> <span data-i18n="btnCheckout">កត់ត្រាការលក់</span>
+                </button>
+                <button type="button" id="btnPosCheckoutAndPrint" class="btn btn-primary pos-checkout-btn pos-btn-accent">
+                  <span>🖨️</span> <span data-i18n="btnCheckoutPrint">កត់ត្រា & ព្រីនវិក្កយបត្រ</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 0.5. Inventory & Stock Tracking Sub-view Container -->
+        <div id="salesInventoryViewContainer" class="table-card" style="display: none;">
+          <!-- Inventory KPI Overview -->
+          <div class="inventory-kpi-bar">
+            <div class="inv-kpi-card">
+              <span class="inv-kpi-icon">📦</span>
+              <div>
+                <span class="inv-kpi-label" data-i18n="statInventoryItems">មុខទំនិញក្នុងស្តុក</span>
+                <span class="inv-kpi-val" id="invKpiTotalProducts">0</span>
+              </div>
+            </div>
+            <div class="inv-kpi-card">
+              <span class="inv-kpi-icon">🔢</span>
+              <div>
+                <span class="inv-kpi-label" data-i18n="statTotalStockUnits">ចំនួនស្តុកសរុប</span>
+                <span class="inv-kpi-val" id="invKpiTotalUnits">0 pcs</span>
+              </div>
+            </div>
+            <div class="inv-kpi-card inv-kpi-alert">
+              <span class="inv-kpi-icon">⚠️</span>
+              <div>
+                <span class="inv-kpi-label" data-i18n="statLowStockAlerts">ទំនិញជិតអស់ពីស្តុក</span>
+                <span class="inv-kpi-val" id="invKpiLowStock">0</span>
+              </div>
+            </div>
+            <div class="inv-kpi-card">
+              <span class="inv-kpi-icon">💵</span>
+              <div>
+                <span class="inv-kpi-label" data-i18n="statStockCostValue">តម្លៃថ្លៃដើមស្តុកសរុប</span>
+                <span class="inv-kpi-val" id="invKpiCostValue">$0.00</span>
+              </div>
+            </div>
+            <div class="inv-kpi-card">
+              <span class="inv-kpi-icon">💎</span>
+              <div>
+                <span class="inv-kpi-label" data-i18n="statStockRetailValue">តម្លៃលក់រាយស្តុកសរុប</span>
+                <span class="inv-kpi-val" id="invKpiRetailValue" style="color: #10b981;">$0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inventory Toolbar -->
+          <div class="inventory-toolbar">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div class="search-box-wrapper" style="max-width: 280px;">
+                <span class="search-icon-left">🔍</span>
+                <input type="text" id="inventorySearchInput" class="search-input" placeholder="ស្វែងរកតាមកូដ SKU ឬឈ្មោះ..." data-i18n-placeholder="searchSalesPlaceholder">
+                <button id="inventorySearchClearBtn" class="search-clear-btn" type="button">✕</button>
+              </div>
+              <select id="inventoryCategoryFilter" class="custom-select">
+                <option value="all" data-i18n="allCategories">គ្រប់ប្រភេទមុខទំនិញ</option>
+              </select>
+              <label class="custom-checkbox-label">
+                <input type="checkbox" id="chkLowStockOnly">
+                <span data-i18n="filterLowStockOnly">បង្ហាញតែទំនិញជិតអស់ពីស្តុក</span>
+              </label>
+            </div>
+
+            <button type="button" id="btnOpenAddProductModal" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+              <span>➕</span> <span data-i18n="btnAddProduct">បន្ថែមមុខទំនិញថ្មី</span>
+            </button>
+          </div>
+
+          <!-- Inventory Table -->
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colProductCode">កូដទំនិញ (SKU)</th>
+                  <th data-i18n="colProduct">មុខទំនិញ & ប្រភេទ</th>
+                  <th data-i18n="colCostPrice" style="text-align: right;">តម្លៃដើម</th>
+                  <th data-i18n="colSellingPrice" style="text-align: right;">តម្លៃលក់</th>
+                  <th data-i18n="colMargin" style="text-align: center;">Margin (%)</th>
+                  <th data-i18n="colStockQty" style="text-align: center;">ចំនួនក្នុងស្តុក</th>
+                  <th data-i18n="colStockStatus" style="text-align: center;">ស្ថានភាពស្តុក</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 1. All Invoices Table Container -->
+        <div id="salesInvoicesViewContainer" class="table-card" style="display: none;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colInvoiceNo">លេខវិក្កយបត្រ</th>
+                  <th data-i18n="colSaleDate">ថ្ងៃខែលក់</th>
+                  <th data-i18n="colProduct">ទំនិញ & ប្រភេទ</th>
+                  <th data-i18n="colQuantity" style="text-align: center;">ចំនួន</th>
+                  <th data-i18n="colCostPrice" style="text-align: right;">តម្លៃដើម</th>
+                  <th data-i18n="colSellingPrice" style="text-align: right;">តម្លៃលក់</th>
+                  <th data-i18n="colTotalAmount" style="text-align: right;">តម្លៃសរុប</th>
+                  <th data-i18n="colProfit" style="text-align: right;">ប្រាក់ចំណេញ</th>
+                  <th data-i18n="colSeller">អ្នកលក់</th>
+                  <th data-i18n="colCustomer">អតិថិជន & ការទូទាត់</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="salesTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. Daily Summary Breakdown Container -->
+        <div id="salesDailyViewContainer" class="table-card" style="display: none;">
+          <div class="section-header-box" style="padding: 16px 20px; border-bottom: 1px solid var(--table-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main);">📅 របាយការណ៍សរុបរាល់ថ្ងៃ (Daily Sales & Profit Breakdown)</h3>
+              <p style="margin: 4px 0 0; font-size: 0.82rem; color: var(--text-subtle);">បង្ហាញពីចំណូល ថ្លៃដើម ប្រាក់ចំណេញសុទ្ធ និងអត្រាចំណេញតាមថ្ងៃនីមួយៗ</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btnPrintDailyReport" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>🖨️</span>
+                <span data-i18n="btnPrintDailyReport">បោះពុម្ពរបាយការណ៍ប្រចាំថ្ងៃ</span>
+              </button>
+              <div id="dailyKpiSummaryBadge" class="profit-chip positive" style="font-size: 0.85rem; padding: 6px 14px;">
+                សរុបប្រចាំថ្ងៃ
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colDailyDate">កាលបរិច្ឆេទ</th>
+                  <th data-i18n="colOrdersCount" style="text-align: center;">ចំនួនប្រតិបត្តិការ</th>
+                  <th data-i18n="colTotalCost" style="text-align: right;">ថ្លៃដើមសរុប</th>
+                  <th data-i18n="colTotalRevenue" style="text-align: right;">ចំណូលលក់សរុប</th>
+                  <th data-i18n="colTotalProfit" style="text-align: right;">ប្រាក់ចំណេញសុទ្ធ</th>
+                  <th data-i18n="colMargin" style="text-align: center;">អត្រាចំណេញ (%)</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="salesDailyTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. Monthly Summary Breakdown Container -->
+        <div id="salesMonthlyViewContainer" class="table-card" style="display: none;">
+          <div class="section-header-box" style="padding: 16px 20px; border-bottom: 1px solid var(--table-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main);">📊 របាយការណ៍សរុបប្រចាំខែ (Monthly Sales & Profit Breakdown)</h3>
+              <p style="margin: 4px 0 0; font-size: 0.82rem; color: var(--text-subtle);">សរុបការលក់ ប្រាក់ចំណូល ថ្លៃដើម និងប្រាក់ចំណេញប្រចាំខែ</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btnPrintMonthlyReport" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>🖨️</span>
+                <span data-i18n="btnPrintMonthlyReport">បោះពុម្ពរបាយការណ៍ប្រចាំខែ</span>
+              </button>
+              <div id="monthlyKpiSummaryBadge" class="profit-chip positive" style="font-size: 0.85rem; padding: 6px 14px;">
+                សរុបប្រចាំខែ
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colMonthlyMonth">ប្រចាំខែ</th>
+                  <th data-i18n="colOrdersCount" style="text-align: center;">ចំនួនប្រតិបត្តិការ</th>
+                  <th data-i18n="colTotalCost" style="text-align: right;">ថ្លៃដើមសរុប</th>
+                  <th data-i18n="colTotalRevenue" style="text-align: right;">ចំណូលលក់សរុប</th>
+                  <th data-i18n="colTotalProfit" style="text-align: right;">ប្រាក់ចំណេញសុទ្ធ</th>
+                  <th data-i18n="colMargin" style="text-align: center;">អត្រាចំណេញជាមធ្យម (%)</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="salesMonthlyTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Yearly Summary Breakdown Container -->
+        <div id="salesYearlyViewContainer" class="table-card" style="display: none;">
+          <div class="section-header-box" style="padding: 16px 20px; border-bottom: 1px solid var(--table-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-main);">📈 <span data-i18n="yearlySalesTitle">របាយការណ៍លក់សរុបប្រចាំឆ្នាំ (Annual Sales & Profit Breakdown)</span></h3>
+              <p style="margin: 4px 0 0; font-size: 0.82rem; color: var(--text-subtle);" data-i18n="yearlySalesSubtitle">សរុបការលក់ ប្រាក់ចំណូល ថ្លៃដើម និងប្រាក់ចំណេញប្រចាំឆ្នាំ</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btnPrintYearlyReport" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>🖨️</span>
+                <span data-i18n="btnPrintYearlyReport">បោះពុម្ពរបាយការណ៍ប្រចាំឆ្នាំ</span>
+              </button>
+              <div id="yearlyKpiSummaryBadge" class="profit-chip positive" style="font-size: 0.85rem; padding: 6px 14px;" data-i18n="yearlyKpiSummary">
+                សរុបប្រចាំឆ្នាំ
+              </div>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colYearlyYear">ប្រចាំឆ្នាំ</th>
+                  <th data-i18n="colOrdersCount" style="text-align: center;">ចំនួនប្រតិបត្តិការ</th>
+                  <th data-i18n="colTotalCost" style="text-align: right;">ថ្លៃដើមសរុប</th>
+                  <th data-i18n="colTotalRevenue" style="text-align: right;">ចំណូលលក់សរុប</th>
+                  <th data-i18n="colTotalProfit" style="text-align: right;">ប្រាក់ចំណេញសុទ្ធ</th>
+                  <th data-i18n="colMargin" style="text-align: center;">អត្រាចំណេញជាមធ្យម (%)</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="salesYearlyTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sales Empty State -->
+        <div id="salesEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">🛒</div>
+          <h3 data-i18n="noSalesFound">មិនមានទិន្នន័យការលក់តាមលក្ខខណ្ឌស្វែងរកនេះទេ</h3>
+          <p data-i18n="noSalesDesc">សូមចុចប៊ូតុង "ចុះបញ្ជីការលក់ថ្មី" ដើម្បីចាប់ផ្ដើមកត់ត្រាការលក់ដំបូង។</p>
+          <button id="btnEmptyRecordSale" class="btn btn-primary">
+            <span>➕</span> <span data-i18n="btnRecordSale">ចុះបញ្ជីការលក់ថ្មី</span>
+          </button>
+        </div>
+      </main>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 4: CUSTOMERS & CRM MANAGEMENT -->
+    <!-- ############################################################# -->
+    <div id="customersSection" style="display: none;">
+      <!-- Customers KPI Overview -->
+      <section class="stats-grid" aria-label="Customer Statistics">
+        <div class="stat-card stat-card-total">
+          <div class="stat-content">
+            <span class="stat-label">អតិថិជនសរុប</span>
+            <span id="custStatTotal" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>🤝</span> <span>បានចុះឈ្មោះក្នុងប្រព័ន្ធ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total">👥</div>
+        </div>
+
+        <div class="stat-card stat-card-active">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="custTypeVIP">អតិថិជន VIP</span>
+            <span id="custStatVip" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>💎</span> <span>អតិថិជនលំដាប់ជាន់ខ្ពស់</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-active">⭐</div>
+        </div>
+
+        <div class="stat-card stat-card-dept">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="custTypeWholesale">ទិញដុំ (Wholesale)</span>
+            <span id="custStatWholesale" class="stat-value">0</span>
+            <span class="stat-subtext">
+              <span>📦</span> <span>ដៃគូចែកចាយធំៗ</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-dept">🏬</div>
+        </div>
+
+        <div class="stat-card stat-card-payroll">
+          <div class="stat-content">
+            <span class="stat-label" data-i18n="colCustSpent">ចំណូលពីអតិថិជនសរុប</span>
+            <span id="custStatTotalSpent" class="stat-value">$0.00</span>
+            <span class="stat-subtext">
+              <span>💰</span> <span>ទឹកប្រាក់ទិញសរុប</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-payroll">💵</div>
+        </div>
+      </section>
+
+      <!-- Customer Controls Toolbar -->
+      <section class="controls-card">
+        <div class="controls-row">
+          <div class="search-box-wrapper">
+            <span class="search-icon-left">🔍</span>
+            <input 
+              type="text" 
+              id="custSearchInput" 
+              class="search-input" 
+              placeholder="ស្វែងរកតាមឈ្មោះ, លេខទូរស័ព្ទ, កូដ, អាសយដ្ឋាន..."
+              autocomplete="off"
+            >
+            <button id="custSearchClearBtn" class="search-clear-btn" title="Clear Search">✕</button>
+          </div>
+
+          <div class="filter-group">
+            <select id="filterCustType" class="custom-select" aria-label="Customer Type Filter">
+              <option value="all" data-i18n="custTypeAll">គ្រប់ប្រភេទអតិថិជន</option>
+              <option value="VIP" data-i18n="custTypeVIP">អតិថិជន VIP</option>
+              <option value="Wholesale" data-i18n="custTypeWholesale">ទិញដុំ (Wholesale)</option>
+              <option value="Regular" data-i18n="custTypeRegular">ទូទៅ (Regular)</option>
+            </select>
+
+            <select id="sortCustBy" class="custom-select" aria-label="Sort Customers">
+              <option value="spent_desc">ចំណាយច្រើនបំផុត (Highest Spent)</option>
+              <option value="orders_desc">បញ្ជាទិញច្រើនបំផុត (Most Orders)</option>
+              <option value="name_asc">ឈ្មោះអតិថិជន (A-Z)</option>
+              <option value="created_desc">បានចុះឈ្មោះថ្មីៗ (Newest)</option>
+            </select>
+
+            <button id="btnOpenAddCustomerModal" class="btn btn-primary">
+              <span>➕</span>
+              <span data-i18n="btnAddCustomer">បន្ថែមអតិថិជនថ្មី</span>
+            </button>
+
+            <button id="btnExportCustomersCsv" class="btn btn-secondary" title="Export Customers CSV">
+              <span>📥</span>
+              <span data-i18n="btnExportCsv">ទាញយកជា CSV</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Customer Data Table -->
+      <main class="content-section">
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colCustCode">កូដអតិថិជន</th>
+                  <th data-i18n="colCustName">ឈ្មោះអតិថិជន</th>
+                  <th data-i18n="colCustPhone">លេខទូរស័ព្ទ & Telegram</th>
+                  <th data-i18n="colCustType">ចំណាត់ថ្នាក់</th>
+                  <th data-i18n="colCustOrders" style="text-align: center;">ចំនួនបញ្ជាទិញ</th>
+                  <th data-i18n="colCustSpent" style="text-align: right;">ទឹកប្រាក់ចំណាយសរុប</th>
+                  <th data-i18n="colCustAddress">អាសយដ្ឋាន</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="customersTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="customersEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">🤝</div>
+          <h3>រកមិនឃើញទិន្នន័យអតិថិជនឡើយ</h3>
+          <p>សូមចុចប៊ូតុង "បន្ថែមអតិថិជនថ្មី" ដើម្បីចុះឈ្មោះអតិថិជនដំបូង។</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 5: FINANCE & PAYROLL MANAGEMENT -->
+    <!-- ############################################################# -->
+    <div id="financeSection" style="display: none;">
+      <!-- Finance KPI Overview -->
+      <section class="stats-grid" aria-label="Finance Statistics">
+        <div class="stat-card stat-card-payroll">
+          <div class="stat-content">
+            <span class="stat-label">ចំណាយប្រតិបត្តិការខែនេះ</span>
+            <span id="finStatExpenseThisMonth" class="stat-value">$0.00</span>
+            <span class="stat-subtext">
+              <span>🏢</span> <span>ថ្លៃជួល ភ្លើង សម្ភារៈ...</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-payroll">💸</div>
+        </div>
+
+        <div class="stat-card stat-card-sales-month">
+          <div class="stat-content">
+            <span class="stat-label">ប្រាក់បៀវត្សរ៍ខែនេះ</span>
+            <span id="finStatPayrollThisMonth" class="stat-value">$0.00</span>
+            <span class="stat-subtext">
+              <span>👥</span> <span id="finStatPayrollCount">0 បុគ្គលិក</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-sales-month">💰</div>
+        </div>
+
+        <div class="stat-card stat-card-total-rev">
+          <div class="stat-content">
+            <span class="stat-label">ចំណាយសរុបទាំងអស់</span>
+            <span id="finStatTotalExpenses" class="stat-value">$0.00</span>
+            <span class="stat-subtext">
+              <span>📊</span> <span>ចំណាយប្រតិបត្តិការសរុប</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total-rev">📉</div>
+        </div>
+
+        <div class="stat-card stat-card-total-profit">
+          <div class="stat-content">
+            <span class="stat-label">ស្ថានភាពសាច់ប្រាក់សុទ្ធ</span>
+            <span id="finStatNetCashflow" class="stat-value profit-value" style="color: #10b981;">+$0.00</span>
+            <span class="stat-subtext">
+              <span>💎</span> <span>ចំណូលដកចំណាយសរុប</span>
+            </span>
+          </div>
+          <div class="stat-icon-wrapper stat-icon-total-profit">🏆</div>
+        </div>
+      </section>
+
+      <!-- Sub-view Switcher Toolbar -->
+      <section class="controls-card">
+        <div class="controls-row">
+          <div class="view-switcher" style="margin: 0;">
+            <button id="finTabExpensesBtn" class="view-btn active" title="Store Expenses">
+              <span>💸</span> <span data-i18n="subViewExpenses">ចំណាយប្រតិបត្តិការហាង</span>
+            </button>
+            <button id="finTabPayrollBtn" class="view-btn" title="Employee Payroll">
+              <span>👥</span> <span data-i18n="subViewPayroll">បញ្ជីប្រាក់បៀវត្សរ៍</span>
+            </button>
+          </div>
+
+          <div id="expensesControlsGroup" class="filter-group">
+            <select id="filterExpenseCategory" class="custom-select" aria-label="Expense Category">
+              <option value="all">គ្រប់ប្រភេទចំណាយ</option>
+              <option value="ជួលទីតាំង & ហាង">ជួលទីតាំង & ហាង</option>
+              <option value="ទឹក ភ្លើង & អ៊ីនធឺណិត">ទឹក ភ្លើង & អ៊ីនធឺណិត</option>
+              <option value="សម្ភារៈការិយាល័យ & វេចខ្ចប់">សម្ភារៈការិយាល័យ & វេចខ្ចប់</option>
+              <option value="ទីផ្សារ & ពាណិជ្ជកម្ម">ទីផ្សារ & ពាណិជ្ជកម្ម</option>
+              <option value="ថែទាំ & ជួសជុល">ថែទាំ & ជួសជុល</option>
+              <option value="ផ្សេងៗ">ផ្សេងៗ</option>
+            </select>
+
+            <button id="btnOpenAddExpenseModal" class="btn btn-primary">
+              <span>➕</span> <span data-i18n="btnAddExpense">កត់ត្រាចំណាយថ្មី</span>
+            </button>
+          </div>
+
+          <div id="payrollControlsGroup" class="filter-group" style="display: none;">
+            <input type="month" id="payrollMonthPicker" class="custom-select" style="padding: 6px 10px;">
+            <button id="btnAutoGeneratePayroll" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669);">
+              <span>⚡</span> <span data-i18n="btnGeneratePayroll">បង្កើតប្រាក់ខែស្វ័យប្រវត្តិ</span>
+            </button>
+            <button id="btnOpenAddPayrollModal" class="btn btn-secondary">
+              <span>➕</span> <span>បន្ថែមប្រាក់ខែដោយដៃ</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 1. Store Expenses Sub-view Container -->
+      <main id="finExpensesContainer" class="content-section">
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colExpCategory">ប្រភេទចំណាយ</th>
+                  <th data-i18n="colExpTitle">បរិយាយចំណាយ</th>
+                  <th data-i18n="colExpAmount" style="text-align: right;">ទឹកប្រាក់ ($)</th>
+                  <th style="text-align: right;">ទឹកប្រាក់ (KHR)</th>
+                  <th data-i18n="colExpDate">កាលបរិច្ឆេទ</th>
+                  <th data-i18n="colExpPayee">អ្នកទទួលប្រាក់ / ហាង</th>
+                  <th data-i18n="colExpMethod">វិធីទូទាត់</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="expensesTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="expensesEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">💸</div>
+          <h3>មិនមានទិន្នន័យចំណាយនៅឡើយទេ</h3>
+          <p>សូមចុចប៊ូតុង "កត់ត្រាចំណាយថ្មី" ដើម្បីចាប់ផ្ដើមកត់ត្រាចំណាយប្រតិបត្តិការ។</p>
+        </div>
+      </main>
+
+      <!-- 2. Staff Payroll Sub-view Container -->
+      <main id="finPayrollContainer" class="content-section" style="display: none;">
+        <div class="table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colPayEmp">បុគ្គលិក</th>
+                  <th data-i18n="colPayMonth">ប្រចាំខែ</th>
+                  <th data-i18n="colPayBase" style="text-align: right;">ប្រាក់ខែគោល</th>
+                  <th data-i18n="colPayBonus" style="text-align: right;">ប្រាក់លើកទឹកចិត្ត</th>
+                  <th data-i18n="colPayAllowance" style="text-align: right;">ឧបត្ថម្ភ</th>
+                  <th data-i18n="colPayDeduction" style="text-align: right;">កាត់ប្រាក់</th>
+                  <th data-i18n="colPayNet" style="text-align: right;">ប្រាក់បើកសុទ្ធ</th>
+                  <th data-i18n="colPayStatus" style="text-align: center;">ស្ថានភាព</th>
+                  <th style="text-align: right;" data-i18n="colActions">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="payrollTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="payrollEmptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">👥</div>
+          <h3>មិនទាន់មានទិន្នន័យប្រាក់បៀវត្សរ៍សម្រាប់ខែនេះទេ</h3>
+          <p>ចុចប៊ូតុង "បង្កើតប្រាក់ខែស្វ័យប្រវត្តិ" ដើម្បីគណនាប្រាក់ខែបុគ្គលិកទាំងអស់ដោយស្វ័យប្រវត្តិ។</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- ############################################################# -->
+    <!-- VIEW 6: SYSTEM & STORE SETTINGS -->
+    <!-- ############################################################# -->
+    <div id="settingsSection" style="display: none;">
+      <section class="content-section">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px;">
+          <!-- Store Profile Card -->
+          <div class="table-card" style="padding: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+              <span style="font-size: 1.5rem;">🏪</span>
+              <div>
+                <h3 style="margin: 0; font-size: 1.15rem;" data-i18n="setStoreProfile">ព័ត៌មានអាជីវកម្ម / ហាង</h3>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-subtle);">ព័ត៌មាននេះបង្ហាញលើក្បាលវិក្កយបត្រ និងប័ណ្ណបើកប្រាក់ខែ</p>
+              </div>
+            </div>
+
+            <form id="settingsStoreForm">
+              <div class="form-grid">
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label" data-i18n="setStoreName">ឈ្មោះហាង / ក្រុមហ៊ុន</label>
+                  <input type="text" id="setStoreNameInput" class="form-input" required>
+                </div>
+
+                <div>
+                  <label class="form-label" data-i18n="setStorePhone">លេខទូរស័ព្ទទំនាក់ទំនង</label>
+                  <input type="text" id="setStorePhoneInput" class="form-input" required>
+                </div>
+
+                <div>
+                  <label class="form-label" data-i18n="setStoreEmail">អ៊ីមែលហាង</label>
+                  <input type="email" id="setStoreEmailInput" class="form-input">
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label">តេលេក្រាមទំនាក់ទំនង (Telegram)</label>
+                  <input type="text" id="setStoreTelegramInput" class="form-input" placeholder="@mrk_store_support">
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label" data-i18n="setStoreAddress">អាសយដ្ឋានហាង</label>
+                  <input type="text" id="setStoreAddressInput" class="form-input" required>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label" data-i18n="setReceiptFooter">សារបាតវិក្កយបត្រ (Receipt Footer Note)</label>
+                  <textarea id="setStoreReceiptFooterInput" class="form-textarea" rows="2"></textarea>
+                </div>
+              </div>
+
+              <div style="margin-top: 18px; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary">
+                  <span>💾</span> <span data-i18n="btnSaveSettings">រក្សាទុកព័ត៌មានហាង</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Financials, Currency, Tax & Bakong -->
+          <div class="table-card" style="padding: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+              <span style="font-size: 1.5rem;">⚙️</span>
+              <div>
+                <h3 style="margin: 0; font-size: 1.15rem;" data-i18n="setFinancials">អត្រាប្តូរប្រាក់ & Bakong KHQR</h3>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-subtle);">កំណត់អត្រាប្រាក់រៀល អត្រាពន្ធ VAT និងការទទួលលុយ KHQR</p>
+              </div>
+            </div>
+
+            <form id="settingsFinanceForm">
+              <div class="form-grid">
+                <div>
+                  <label class="form-label" data-i18n="setExchangeRate">អត្រាប្តូរប្រាក់ ($1 ស្មើនឹង ៛)</label>
+                  <input type="number" id="setExchangeRateInput" class="form-input" min="1000" step="50" required>
+                </div>
+
+                <div>
+                  <label class="form-label" data-i18n="setTaxRate">អត្រាពន្ធ VAT (%)</label>
+                  <input type="number" id="setTaxRateInput" class="form-input" min="0" max="100" step="1" required>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label">ឈ្មោះគណនី Bakong KHQR</label>
+                  <input type="text" id="setBakongNameInput" class="form-input" placeholder="MRC KH OFFICIAL STORE">
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label">Bakong Account ID / Phone Number</label>
+                  <input type="text" id="setBakongIdInput" class="form-input" placeholder="mrckh@aclb">
+                </div>
+              </div>
+
+              <div style="margin-top: 18px; display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn btn-primary">
+                  <span>💾</span> <span>រក្សាទុកអត្រាពន្ធ & KHQR</span>
+                </button>
+              </div>
+            </form>
+
+            <div style="border-top: 1px dashed var(--border-color); margin: 24px 0 20px 0;"></div>
+
+            <!-- Backup & Export -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h4 style="margin: 0; font-size: 1rem;" data-i18n="setBackup">ការបម្រុងទុកទិន្នន័យ (Full Backup)</h4>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-subtle);">ទាញយកទិន្នន័យទាំងអស់ (បុគ្គលិក, ការលក់, អតិថិជន, ចំណាយ, ប្រាក់ខែ) ជា JSON</p>
+              </div>
+              <button type="button" id="btnExportFullBackupJson" class="btn btn-secondary" style="border-color: #6366f1; color: #a5b4fc;">
+                <span>📦</span> <span data-i18n="btnExportBackup">ទាញយក Full Backup JSON</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- ================= Modal: Add / Edit Employee ================= -->
+  <div id="employeeModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>👤</span>
+          <h2 id="modalTitle" data-i18n="modalAddTitle">បន្ថែមបុគ្គលិកថ្មី</h2>
+        </div>
+        <button id="btnCloseEmployeeModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <form id="employeeForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldEmpCode">អត្តលេខបុគ្គលិក (ID)</span>
+              </label>
+              <input type="text" id="empCode" class="form-input" placeholder="ឧ. EMP-0013 (ទុកទំនេរដើម្បីបង្កើតស្វ័យប្រវត្តិ)">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="fieldAvatarColor">ពណ៌សម្គាល់ Profile</label>
+              <div id="colorPickerContainer" class="color-picker-group"></div>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldFirstName">នាមខ្លួន (First Name)</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="empFirstName" class="form-input" required placeholder="ឧ. Dara">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldLastName">គោត្តនាម (Last Name)</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="empLastName" class="form-input" required placeholder="ឧ. Chan">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="fieldKhmerName">ឈ្មោះពេញជាភាសាខ្មែរ</label>
+              <input type="text" id="empKhmerName" class="form-input" placeholder="ឧ. ចាន់ តារា">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldGender">ភេទ</span> <span class="req">*</span>
+              </label>
+              <select id="empGender" class="form-select" required>
+                <option value="Male" data-i18n="genderMale">ប្រុស</option>
+                <option value="Female" data-i18n="genderFemale">ស្រី</option>
+                <option value="Other" data-i18n="genderOther">ផ្សេងៗ</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldEmail">អាសយដ្ឋានអ៊ីមែល</span> <span class="req">*</span>
+              </label>
+              <input type="email" id="empEmail" class="form-input" required placeholder="dara.chan@company.kh">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="fieldPhone">លេខទូរស័ព្ទ</label>
+              <input type="text" id="empPhone" class="form-input" placeholder="+855 12 345 678">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldDepartment">ដេប៉ាតឺម៉ង់ / ផ្នែក</span> <span class="req">*</span>
+              </label>
+              <select id="empDepartment" class="form-select" required>
+                <option value="IT & Engineering">ព័ត៌មានវិទ្យា & វិស្វកម្ម (IT & Engineering)</option>
+                <option value="Human Resources">ធនធានមនុស្ស (Human Resources)</option>
+                <option value="Finance & Accounting">ហិរញ្ញវត្ថុ & គណនេយ្យ (Finance & Accounting)</option>
+                <option value="Marketing & Sales">ទីផ្សារ & លក់ (Marketing & Sales)</option>
+                <option value="Operations">ប្រតិបត្តិការ (Operations)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldPosition">តួនាទី / មុខតំណែង</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="empPosition" class="form-input" required placeholder="Senior Frontend Engineer">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldSalary">ប្រាក់បៀវត្សរ៍មូលដ្ឋាន ($)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="empSalary" class="form-input" min="0" step="10" required placeholder="1500">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldHireDate">កាលបរិច្ឆេទចូលបម្រើការងារ</span> <span class="req">*</span>
+              </label>
+              <input type="date" id="empHireDate" class="form-input" required>
+            </div>
+
+            <div class="form-group-full">
+              <label class="form-label">
+                <span data-i18n="fieldStatus">ស្ថានភាពការងារ</span> <span class="req">*</span>
+              </label>
+              <select id="empStatus" class="form-select" required>
+                <option value="Active" data-i18n="statusActive">ពេញសិទ្ធិ (Active)</option>
+                <option value="Probation" data-i18n="statusProbation">សាកល្បង (Probation)</option>
+                <option value="On Leave" data-i18n="statusOnLeave">ឈប់សម្រាក (On Leave)</option>
+                <option value="Resigned" data-i18n="statusResigned">ឈប់បម្រើការងារ (Resigned)</option>
+              </select>
+            </div>
+
+            <!-- Work Shift & Hours (ម៉ោងចូល និង ម៉ោងចេញ) -->
+            <div class="form-group-full" style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                <label class="form-label" style="margin: 0; font-weight: 700; color: #818cf8; display: flex; align-items: center; gap: 6px;">
+                  <span>🕒</span>
+                  <span data-i18n="fieldShiftHoursTitle">ម៉ោងការងារ & ម៉ោងចូល-ចេញ (Work Shift)</span>
+                </label>
+                <span style="font-size: 0.74rem; color: var(--text-subtle);" data-i18n="shiftPresetHint">ជម្រើសវេនការងាររហ័ស (Quick Shift Options):</span>
+              </div>
+
+              <!-- Quick Shift Presets -->
+              <div class="shift-chips-row">
+                <button type="button" class="shift-chip active" id="chipShiftFull" onclick="KhmerHR.setShiftPreset('08:00', '17:00', this)">
+                  <span>☀️</span> <span data-i18n="shiftFullDay">ពេញម៉ោង (08:00 - 17:00)</span>
+                </button>
+                <button type="button" class="shift-chip" onclick="KhmerHR.setShiftPreset('07:30', '16:30', this)">
+                  <span>🌅</span> <span data-i18n="shiftMorning">ពេលព្រឹក (07:30 - 16:30)</span>
+                </button>
+                <button type="button" class="shift-chip" onclick="KhmerHR.setShiftPreset('08:30', '17:30', this)">
+                  <span>🏢</span> <span data-i18n="shiftOffice">រដ្ឋបាល (08:30 - 17:30)</span>
+                </button>
+                <button type="button" class="shift-chip" onclick="KhmerHR.setShiftPreset('13:00', '21:00', this)">
+                  <span>🌙</span> <span data-i18n="shiftAfternoon">រសៀល-យប់ (13:00 - 21:00)</span>
+                </button>
+                <button type="button" class="shift-chip" onclick="KhmerHR.setShiftPreset('08:00', '12:00', this)">
+                  <span>⚡</span> <span data-i18n="shiftHalfDay">កន្លះថ្ងៃ (08:00 - 12:00)</span>
+                </button>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div>
+                  <label class="form-label">
+                    <span data-i18n="fieldShiftStart">ម៉ោងចូលធ្វើការ (Clock-In Time)</span> <span class="req">*</span>
+                  </label>
+                  <input type="time" id="empShiftStart" class="form-input" value="08:00" required>
+                </div>
+                <div>
+                  <label class="form-label">
+                    <span data-i18n="fieldShiftEnd">ម៉ោងចេញពីធ្វើការ (Clock-Out Time)</span> <span class="req">*</span>
+                  </label>
+                  <input type="time" id="empShiftEnd" class="form-input" value="17:00" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group-full">
+              <label class="form-label" data-i18n="fieldAddress">អាសយដ្ឋានបច្ចុប្បន្ន</label>
+              <input type="text" id="empAddress" class="form-input" placeholder="រាជធានីភ្នំពេញ, ប្រទេសកម្ពុជា">
+            </div>
+
+            <div class="form-group-full">
+              <label class="form-label" data-i18n="fieldNotes">កំណត់សម្គាល់បន្ថែម</label>
+              <textarea id="empNotes" class="form-textarea" placeholder="ព័ត៌មានបន្ថែម ឬបទពិសោធន៍..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelEmployeeModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" id="btnSaveEmployee" class="btn btn-primary" data-i18n="btnSave">រក្សាទុកទិន្នន័យ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Add / Edit Attendance (Time In & Time Out) ================= -->
+  <div id="attendanceModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>⏱️</span>
+          <h2 id="attModalTitle" data-i18n="modalAddAttendanceTitle">កត់ត្រាម៉ោងចូល & ម៉ោងចេញ (Time In & Time Out)</h2>
+        </div>
+        <button type="button" id="btnCloseAttendanceModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <form id="attendanceRecordForm">
+        <input type="hidden" id="attRecordId" value="">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group-full">
+              <label class="form-label">
+                <span data-i18n="fieldAttStaff">ជ្រើសរើសបុគ្គលិក (Staff Member)</span> <span class="req">*</span>
+              </label>
+              <select id="attModalEmpSelect" class="form-select" required>
+                <option value="">-- ជ្រើសរើសបុគ្គលិក --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldAttDate">កាលបរិច្ឆេទ (Date)</span> <span class="req">*</span>
+              </label>
+              <input type="date" id="attModalDate" class="form-input" required>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldAttStatus">ស្ថានភាពវត្តមាន (Status)</span> <span class="req">*</span>
+              </label>
+              <select id="attModalStatus" class="form-select" required>
+                <option value="Auto">✨ គណនាស្វ័យប្រវត្តិតាមម៉ោង (Auto)</option>
+                <option value="On Time" data-i18n="statusOnTime">ទាន់ពេល (On Time)</option>
+                <option value="Late" data-i18n="statusLate">មកយឺត (Late)</option>
+                <option value="Early Leave" data-i18n="statusEarlyLeave">ចេញមុនម៉ោង (Early Leave)</option>
+                <option value="Working" data-i18n="statusWorking">កំពុងធ្វើការ (Working)</option>
+                <option value="Half Day" data-i18n="statusHalfDay">កន្លះថ្ងៃ (Half Day)</option>
+              </select>
+            </div>
+
+            <!-- Time In Section -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="form-label" style="margin: 0; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>🟢</span> <span data-i18n="colCheckIn">ម៉ោងចូល (Time In)</span>
+                </label>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="btn btn-secondary" id="btnSetNowTimeIn" style="padding: 2px 8px; font-size: 0.72rem;">
+                    ⏱️ ពេលនេះ
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="btnSetShiftTimeIn" style="padding: 2px 8px; font-size: 0.72rem;">
+                    🕒 តាមវេន
+                  </button>
+                </div>
+              </div>
+              <input type="time" id="attModalCheckIn" class="form-input" style="font-size: 1.1rem; font-weight: 600;">
+            </div>
+
+            <!-- Time Out Section -->
+            <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 12px; padding: 14px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label class="form-label" style="margin: 0; color: #f43f5e; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <span>🔴</span> <span data-i18n="colCheckOut">ម៉ោងចេញ (Time Out)</span>
+                </label>
+                <div style="display: flex; gap: 4px;">
+                  <button type="button" class="btn btn-secondary" id="btnSetNowTimeOut" style="padding: 2px 8px; font-size: 0.72rem;">
+                    ⏱️ ពេលនេះ
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="btnSetShiftTimeOut" style="padding: 2px 8px; font-size: 0.72rem;">
+                    🕒 តាមវេន
+                  </button>
+                </div>
+              </div>
+              <input type="time" id="attModalCheckOut" class="form-input" style="font-size: 1.1rem; font-weight: 600;">
+            </div>
+
+            <!-- Auto Calculated Preview Bar -->
+            <div class="form-group-full" style="display: flex; justify-content: space-between; align-items: center; background: rgba(99, 102, 241, 0.06); border-radius: 10px; padding: 12px 16px; border: 1px solid rgba(99, 102, 241, 0.2); flex-wrap: wrap; gap: 8px;">
+              <div style="font-size: 0.85rem; color: var(--text-subtle);">
+                <span>វេនកំណត់ (Shift Schedule):</span> <strong id="attModalShiftPreview" style="color: #818cf8; margin-left: 4px;">08:00 - 17:00</strong>
+              </div>
+              <div style="font-size: 0.88rem;">
+                <span>ម៉ោងធ្វើការសរុប:</span> <strong id="attModalWorkHoursPreview" style="color: #06b6d4; font-size: 1.15rem; margin-left: 4px;">0.0</strong> <span style="color: var(--text-subtle);">ម៉ោង</span>
+              </div>
+            </div>
+
+            <div class="form-group-full">
+              <label class="form-label" data-i18n="fieldNotes">កំណត់សម្គាល់បន្ថែម (Notes)</label>
+              <textarea id="attModalNotes" class="form-textarea" rows="2" placeholder="មូលហេតុមកយឺត ឬការអនុញ្ញាតផ្សេងៗ..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelAttendanceModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" id="btnSaveAttendanceRecord" class="btn btn-primary" data-i18n="btnSave">រក្សាទុកទិន្នន័យ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Request / Edit Leave ================= -->
+  <div id="leaveModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>📅</span>
+          <h2 id="leaveModalTitle" data-i18n="modalRequestLeaveTitle">ដាក់ពាក្យស្នើសុំច្បាប់សម្រាក</h2>
+        </div>
+        <button id="btnCloseLeaveModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <form id="leaveForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <!-- Select Employee -->
+            <div class="form-group-full">
+              <label class="form-label">
+                <span data-i18n="fieldSelectEmployee">ជ្រើសរើសបុគ្គលិក</span> <span class="req">*</span>
+              </label>
+              <select id="leaveEmpSelect" class="form-select" required>
+                <!-- Populated dynamically with all employees -->
+              </select>
+            </div>
+
+            <!-- Leave Type -->
+            <div class="form-group-full">
+              <label class="form-label">
+                <span data-i18n="fieldLeaveType">ប្រភេទច្បាប់សម្រាក</span> <span class="req">*</span>
+              </label>
+              <select id="leaveTypeSelect" class="form-select" required>
+                <option value="Annual Leave" data-i18n="leaveAnnual">ច្បាប់ប្រចាំឆ្នាំ (Annual Leave)</option>
+                <option value="Sick Leave" data-i18n="leaveSick">ច្បាប់ឈឺ (Sick Leave)</option>
+                <option value="Maternity Leave" data-i18n="leaveMaternity">ច្បាប់លំហែមាតុភាព (Maternity Leave)</option>
+                <option value="Personal Leave" data-i18n="leavePersonal">ច្បាប់កិច្ចការផ្ទាល់ខ្លួន (Personal Leave)</option>
+                <option value="Unpaid Leave" data-i18n="leaveUnpaid">ច្បាប់គ្មានប្រាក់ឈ្នួល (Unpaid Leave)</option>
+              </select>
+            </div>
+
+            <!-- Start Date -->
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldStartDate">ចាប់ពីថ្ងៃ</span> <span class="req">*</span>
+              </label>
+              <input type="date" id="leaveStartDate" class="form-input" required>
+            </div>
+
+            <!-- End Date -->
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldEndDate">រហូតដល់ថ្ងៃ</span> <span class="req">*</span>
+              </label>
+              <input type="date" id="leaveEndDate" class="form-input" required>
+            </div>
+
+            <!-- Days Count -->
+            <div class="form-group-full">
+              <label class="form-label">
+                <span data-i18n="fieldDaysCount">ចំនួនថ្ងៃសរុប</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="leaveDaysCount" class="form-input" min="0.5" step="0.5" required placeholder="1">
+            </div>
+
+            <!-- Reason -->
+            <div class="form-group-full">
+              <label class="form-label">
+                <span data-i18n="fieldLeaveReason">មូលហេតុនៃការសុំច្បាប់</span> <span class="req">*</span>
+              </label>
+              <textarea id="leaveReason" class="form-textarea" required placeholder="សូមបញ្ជាក់មូលហេតុលម្អិត..."></textarea>
+            </div>
+
+            <!-- Status (if editing) -->
+            <div id="leaveStatusRow" class="form-group-full" style="display: none;">
+              <label class="form-label" data-i18n="colLeaveStatus">ស្ថានភាព</label>
+              <select id="leaveStatusSelect" class="form-select">
+                <option value="Pending" data-i18n="leaveStatusPending">រង់ចាំអនុម័ត (Pending)</option>
+                <option value="Approved" data-i18n="leaveStatusApproved">បានអនុម័ត (Approved)</option>
+                <option value="Rejected" data-i18n="leaveStatusRejected">មិនអនុម័ត (Rejected)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelLeaveModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" id="btnSaveLeave" class="btn btn-primary" data-i18n="btnSave">រក្សាទុកទិន្នន័យ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Reject Leave Reason ================= -->
+  <div id="rejectLeaveModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>❌</span>
+          <h2 data-i18n="modalRejectTitle" style="color: #f43f5e;">បដិសេធសំណើសុំច្បាប់</h2>
+        </div>
+        <button id="btnCloseRejectModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: 12px; font-size: 0.95rem;">
+          <span id="rejectEmpNamePrompt">តើអ្នកពិតជាចង់បដិសេធសំណើសុំច្បាប់នេះមែនទេ?</span>
+        </p>
+        <div>
+          <label class="form-label" data-i18n="fieldRejectionReason">មូលហេតុនៃការបដិសេធ</label>
+          <textarea id="rejectionReasonInput" class="form-textarea" placeholder="បញ្ជាក់មូលហេតុជូនបុគ្គលិក..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btnCancelReject" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+        <button type="button" id="btnConfirmReject" class="btn btn-danger" data-i18n="btnConfirmReject">បញ្ជាក់ការបដិសេធ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: View Employee Details ================= -->
+  <div id="viewModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>🪪</span>
+          <h2 data-i18n="viewProfileTitle">ព័ត៌មានលម្អិតបុគ្គលិក</h2>
+        </div>
+        <button id="btnCloseViewModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="viewProfileContainer"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btnPrintProfile" class="btn btn-secondary">
+          <span>🖨️</span>
+          <span data-i18n="btnPrint">បោះពុម្ពកាត</span>
+        </button>
+        <button onclick="document.getElementById('viewModal').classList.remove('active')" class="btn btn-primary" data-i18n="btnClose">
+          បិទ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Delete Confirmation ================= -->
+  <div id="deleteModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>⚠️</span>
+          <h2 id="deleteModalTitle" data-i18n="modalDeleteTitle" style="color: #f43f5e;">បញ្ជាក់ការលុប</h2>
+        </div>
+        <button id="btnCloseDeleteModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: 12px; font-size: 0.95rem;">
+          <span id="deleteModalMsg" data-i18n="modalDeleteMsg">តើអ្នកប្រាកដជាចង់លុប</span>
+          <strong id="deleteEmpName" style="color: var(--primary-500); display: block; margin-top: 6px; font-size: 1.05rem;"></strong>
+        </p>
+        <p style="color: #f43f5e; font-size: 0.85rem;" data-i18n="modalDeleteWarning">
+          ⚠️ សកម្មភាពនេះមិនអាចត្រឡប់ថយក្រោយវិញបានទេ!
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btnCancelDelete" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+        <button type="button" id="btnConfirmDelete" class="btn btn-danger" data-i18n="btnConfirmDelete">យល់ព្រមលុប</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Record / Edit Sale ================= -->
+  <div id="saleModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>🛒</span>
+          <h2 id="saleModalTitle" data-i18n="modalAddSaleTitle">ចុះបញ្ជីការលក់ទំនិញថ្មី</h2>
+        </div>
+        <button id="btnCloseSaleModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <form id="saleForm">
+        <div class="modal-body">
+          <!-- Quick Preset Categories/Products Options -->
+          <div class="quick-options-container">
+            <div class="quick-options-header">
+              <span class="quick-options-title">
+                <span class="quick-options-icon">⚡</span>
+                <span data-i18n="quickSuggestionsTitle">ជម្រើសប្រភេទរហ័ស (Quick Options):</span>
+              </span>
+              <span class="quick-options-hint" id="quickOptionsHint" data-i18n="quickSuggestionsHint">ចុចជ្រើសរើសប្រភេទ និងទំនិញគំរូ</span>
+            </div>
+            <div class="quick-chips-grid" id="saleQuickChips" role="radiogroup" aria-label="Quick Category Options">
+              <button type="button" class="quick-chip active" data-category="គ្រឿងអេឡិចត្រូនិក & IT" data-cost="250" data-sell="340" title="គ្រឿងអេឡិចត្រូនិក & IT">
+                <span class="chip-icon">💻</span>
+                <span class="chip-label">គ្រឿងអេឡិចត្រូនិក & IT</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="ទូរស័ព្ទ & គ្រឿងបន្លាស់" data-cost="500" data-sell="620" title="ទូរស័ព្ទ & គ្រឿងបន្លាស់">
+                <span class="chip-icon">📱</span>
+                <span class="chip-label">ទូរស័ព្ទ & គ្រឿងបន្លាស់</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="សម្លៀកបំពាក់ & ម៉ូដ" data-cost="6" data-sell="14" title="សម្លៀកបំពាក់ & ម៉ូដ">
+                <span class="chip-icon">👕</span>
+                <span class="chip-label">សម្លៀកបំពាក់ & ម៉ូដ</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="ម្ហូបអាហារ & ភេសជ្ជៈ" data-cost="1.5" data-sell="3" title="ម្ហូបអាហារ & ភេសជ្ជៈ">
+                <span class="chip-icon">🍲</span>
+                <span class="chip-label">ម្ហូបអាហារ & ភេសជ្ជៈ</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="សម្ភារៈការិយាល័យ" data-cost="15" data-sell="22" title="សម្ភារៈការិយាល័យ">
+                <span class="chip-icon">📁</span>
+                <span class="chip-label">សម្ភារៈការិយាល័យ</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="សេវាកម្ម & ដំណោះស្រាយ" data-cost="100" data-sell="250" title="សេវាកម្ម & ដំណោះស្រាយ">
+                <span class="chip-icon">🛠️</span>
+                <span class="chip-label">សេវាកម្ម & ដំណោះស្រាយ</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="ទំនិញប្រើប្រាស់ទូទៅ" data-cost="10" data-sell="18" title="ទំនិញប្រើប្រាស់ទូទៅ">
+                <span class="chip-icon">🏠</span>
+                <span class="chip-label">ទំនិញប្រើប្រាស់ទូទៅ</span>
+              </button>
+              <button type="button" class="quick-chip" data-category="ផ្សេងៗ / Other" data-cost="0" data-sell="0" title="ផ្សេងៗ / Other">
+                <span class="chip-icon">📦</span>
+                <span class="chip-label">ផ្សេងៗ / Other</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label">
+                <span data-i18n="fieldProductName">ឈ្មោះមុខទំនិញ / សេវាកម្ម</span> <span class="req">*</span>
+                <span id="saleProductStockBadge" style="display:none; margin-left: 8px; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;"></span>
+              </label>
+              <input type="text" id="saleProductName" list="saleProductSuggestions" class="form-input" required placeholder="ឧ. Dell XPS 15, iPhone 16, កាហ្វេទឹកដោះគោ..." autocomplete="off">
+              <datalist id="saleProductSuggestions"></datalist>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldProductCategory">ប្រភេទមុខទំនិញ</span> <span class="req">*</span>
+              </label>
+              <select id="saleCategory" class="form-select" required>
+                <option value="គ្រឿងអេឡិចត្រូនិក & IT">គ្រឿងអេឡិចត្រូនិក & IT</option>
+                <option value="ទូរស័ព្ទ & គ្រឿងបន្លាស់">ទូរស័ព្ទ & គ្រឿងបន្លាស់</option>
+                <option value="សម្លៀកបំពាក់ & ម៉ូដ">សម្លៀកបំពាក់ & ម៉ូដ</option>
+                <option value="ម្ហូបអាហារ & ភេសជ្ជៈ">ម្ហូបអាហារ & ភេសជ្ជៈ</option>
+                <option value="សម្ភារៈការិយាល័យ">សម្ភារៈការិយាល័យ</option>
+                <option value="ទំនិញប្រើប្រាស់ទូទៅ">ទំនិញប្រើប្រាស់ទូទៅ</option>
+                <option value="សេវាកម្ម & ដំណោះស្រាយ">សេវាកម្ម & ដំណោះស្រាយ</option>
+                <option value="ផ្សេងៗ / Other">ផ្សេងៗ / Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldQuantity">ចំនួន (Quantity)</span> <span class="req">*</span>
+              </label>
+              <div class="qty-stepper-wrapper">
+                <button type="button" id="btnQtyMinus" class="qty-btn" aria-label="Decrease quantity">-</button>
+                <input type="number" id="saleQuantity" class="form-input" min="0.01" step="any" value="1" required style="text-align: center;">
+                <button type="button" id="btnQtyPlus" class="qty-btn" aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldCostPrice">តម្លៃដើមក្នុង ១ ឯកតា ($)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="saleCostPrice" class="form-input" min="0" step="any" value="0.00" required placeholder="0.00">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldSellingPrice">តម្លៃលក់ក្នុង ១ ឯកតា ($)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="saleSellingPrice" class="form-input" min="0" step="any" value="0.00" required placeholder="0.00">
+            </div>
+
+            <!-- Real-Time Calculation Card -->
+            <div style="grid-column: 1 / -1;" class="calc-profit-card">
+              <div class="calc-row">
+                <div class="calc-item">
+                  <span class="calc-label" data-i18n="calcTotalCost">ថ្លៃដើមសរុប</span>
+                  <span id="calcTotalCostVal" class="calc-val">$0.00</span>
+                </div>
+                <div class="calc-divider">→</div>
+                <div class="calc-item">
+                  <span class="calc-label" data-i18n="calcTotalRevenue">តម្លៃលក់សរុប</span>
+                  <span id="calcTotalRevenueVal" class="calc-val accent-val">$0.00</span>
+                </div>
+                <div class="calc-divider">=</div>
+                <div class="calc-item">
+                  <span class="calc-label" data-i18n="calcEstimatedProfit">ប្រាក់ចំណេញប៉ាន់ស្មាន</span>
+                  <span id="calcTotalProfitVal" class="calc-val profit-val">+$0.00 (0%)</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldSellerName">ឈ្មោះអ្នកលក់ (Seller / Cashier)</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="saleSellerName" class="form-input" list="sellersDataList" required placeholder="ជ្រើសរើស ឬបញ្ចូលឈ្មោះ...">
+              <datalist id="sellersDataList">
+                <!-- Dynamically populated from active staff -->
+              </datalist>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldPaymentMethod">វិធីសាស្រ្តទូទាត់</span>
+              </label>
+              <select id="salePaymentMethod" class="form-select">
+                <option value="Cash">💵 សាច់ប្រាក់ (Cash)</option>
+                <option value="ABA KHQR">📱 ស្កេន ABA KHQR</option>
+                <option value="Wing">💸 វីង (Wing)</option>
+                <option value="Card">💳 កាតធនាគារ (Card / Visa / Master)</option>
+                <option value="Bank Transfer">🏦 ផ្ទេរប្រាក់តាមធនាគារ (Bank Transfer)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldSaleDate">ថ្ងៃខែលក់</span> <span class="req">*</span>
+              </label>
+              <input type="date" id="saleDateInput" class="form-input" required>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldSaleTime">ម៉ោងលក់</span>
+              </label>
+              <input type="time" id="saleTimeInput" class="form-input">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="fieldCustomerName">ឈ្មោះអតិថិជន / ស្ថាប័នទិញ</label>
+              <input type="text" id="saleCustomerName" class="form-input" placeholder="ឧ. លោក សុខា, ក្រុមហ៊ុន ស៊ី អិន ភី...">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="fieldNotes">កំណត់ចំណាំបន្ថែម</label>
+              <textarea id="saleNotes" class="form-textarea" placeholder="ព័ត៌មានលម្អិតបន្ថែម ឬការធានា..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="btnCancelSale" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btnSaveAndPrintSale" class="btn" style="background: linear-gradient(135deg, #059669, #10b981); color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+              <span>🖨️</span>
+              <span data-i18n="btnSaveAndPrint">រក្សាទុក & ព្រីនវិក្កយបត្រ</span>
+            </button>
+            <button type="submit" id="btnSaveSale" class="btn btn-primary">
+              <span>💾</span>
+              <span id="btnSaveSaleText" data-i18n="btnSave">រក្សាទុកការលក់</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Add / Edit Product (Inventory) ================= -->
+  <div id="productModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>📦</span>
+          <h2 id="productModalTitle" data-i18n="modalAddProductTitle">បន្ថែមមុខទំនិញថ្មីក្នុងស្តុក</h2>
+        </div>
+        <button id="btnCloseProductModal" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <form id="productForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldProductCode">លេខកូដទំនិញ / Barcode (SKU)</span>
+              </label>
+              <input type="text" id="prodCode" class="form-input" placeholder="ឧ. PRD-0014 (ទុកទំនេរដើម្បីបង្កើតស្វ័យប្រវត្តិ)">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldProductCategory">ប្រភេទមុខទំនិញ</span> <span class="req">*</span>
+              </label>
+              <select id="prodCategory" class="form-select" required>
+                <option value="គ្រឿងអេឡិចត្រូនិក & IT">គ្រឿងអេឡិចត្រូនិក & IT</option>
+                <option value="ទូរស័ព្ទ & គ្រឿងបន្លាស់">ទូរស័ព្ទ & គ្រឿងបន្លាស់</option>
+                <option value="សម្លៀកបំពាក់ & ម៉ូដ">សម្លៀកបំពាក់ & ម៉ូដ</option>
+                <option value="ម្ហូបអាហារ & ភេសជ្ជៈ">ម្ហូបអាហារ & ភេសជ្ជៈ</option>
+                <option value="សម្ភារៈការិយាល័យ">សម្ភារៈការិយាល័យ</option>
+                <option value="ទំនិញប្រើប្រាស់ទូទៅ">ទំនិញប្រើប្រាស់ទូទៅ</option>
+                <option value="សេវាកម្ម & ដំណោះស្រាយ">សេវាកម្ម & ដំណោះស្រាយ</option>
+                <option value="ផ្សេងៗ / Other">ផ្សេងៗ / Other</option>
+              </select>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label">
+                <span data-i18n="fieldProductName">ឈ្មោះមុខទំនិញ</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="prodName" class="form-input" required placeholder="ឧ. Dell Latitude 7440, កាហ្វេទឹកដោះគោ...">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldCostPrice">តម្លៃដើម ($ USD)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="prodCostPrice" class="form-input" min="0" step="any" required placeholder="0.00">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldSellingPrice">តម្លៃលក់ ($ USD)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="prodSellingPrice" class="form-input" min="0" step="any" required placeholder="0.00">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldInitialStock">ចំនួនក្នុងស្តុក</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="prodStockQty" class="form-input" min="0" step="any" required value="10">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="fieldLowStockThreshold">កម្រិតដាស់តឿនស្តុកទាប</span>
+              </label>
+              <input type="number" id="prodLowStockThreshold" class="form-input" min="0" step="1" value="5">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label">
+                <span data-i18n="fieldProductUnit">ខ្នាតឯកតា (Unit)</span>
+              </label>
+              <input type="text" id="prodUnit" class="form-input" placeholder="ឧ. គ្រឿង, ឈុត, កំប៉ុង, កញ្ចប់, pcs, set...">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="fieldNotes">កំណត់ចំណាំបន្ថែម</label>
+              <textarea id="prodNotes" class="form-textarea" placeholder="ព័ត៌មានលម្អិតអំពីផលិតផល ឬអ្នកផ្គត់ផ្គង់..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelProductModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" id="btnSaveProduct" class="btn btn-primary">
+            <span>💾</span> <span data-i18n="btnSave">រក្សាទុកទិន្នន័យ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Quick Restock Inventory ================= -->
+  <div id="restockModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>📥</span>
+          <h2 data-i18n="modalRestockTitle">បញ្ចូលស្តុកទំនិញបន្ថែម (Restock)</h2>
+        </div>
+        <button id="btnCloseRestockModal" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <form id="restockForm">
+        <div class="modal-body">
+          <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span class="badge" id="restockProdCodeBadge" style="font-size: 0.75rem;">PRD-0001</span>
+                <h4 id="restockProdNameText" style="margin: 4px 0 0; font-size: 1.05rem; color: var(--text-main);">Product Name</h4>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 0.72rem; color: var(--text-subtle);" data-i18n="currentStockLabel">ស្តុកបច្ចុប្បន្ន:</div>
+                <strong id="restockCurrentStockText" style="font-size: 1.15rem; color: #6366f1;">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label class="form-label">
+              <span data-i18n="fieldRestockQty">ចំនួនដែលត្រូវបញ្ចូលបន្ថែម</span> <span class="req">*</span>
+            </label>
+            <input type="number" id="restockQtyInput" class="form-input" min="1" step="any" required value="10" style="font-size: 1.1rem; font-weight: 700; text-align: center;">
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label class="form-label" data-i18n="fieldRestockNotes">កំណត់ចំណាំការនាំចូល / អ្នកផ្គត់ផ្គង់</label>
+            <input type="text" id="restockNotesInput" class="form-input" placeholder="ឧ. នាំចូលបន្ថែមពីក្រុមហ៊ុនចែកចាយ, វិក្កយបត្រ #PO-882...">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px;">
+            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);" data-i18n="newStockLabel">ស្តុកថ្មីក្រោយបញ្ចូល:</span>
+            <strong id="restockNewStockPreview" style="font-size: 1.1rem; color: #10b981;">10</strong>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelRestockModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" id="btnSubmitRestock" class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #10b981);">
+            <span>📥</span> <span data-i18n="btnRestock">បញ្ចូលស្តុក</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Sales Receipt & Invoice (Printable) ================= -->
+  <div id="receiptModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 560px; width: 95%;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>🧾</span>
+          <h2 data-i18n="receiptTitle">វិក្កយបត្រលក់ទំនិញ</h2>
+        </div>
+        <button id="btnCloseReceiptModal" class="btn-icon" style="border:none;" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Receipt Options Toolbar -->
+      <div class="receipt-toolbar-box">
+        <div class="receipt-toolbar-group">
+          <span class="toolbar-label">ទម្រង់ព្រីន:</span>
+          <div class="btn-group-segmented">
+            <button type="button" id="btnFormatThermal" class="receipt-toggle-btn active" data-format="thermal">
+              <span>🧾</span> <span data-i18n="receiptFormatThermal">POS (80mm)</span>
+            </button>
+            <button type="button" id="btnFormatStandard" class="receipt-toggle-btn" data-format="standard">
+              <span>📄</span> <span data-i18n="receiptFormatStandard">A4/A5 ស្តង់ដារ</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="receipt-toolbar-group">
+          <span class="toolbar-label">របៀប:</span>
+          <div class="btn-group-segmented">
+            <button type="button" id="btnTypeCustomer" class="receipt-toggle-btn active" data-type="customer">
+              <span>👤</span> <span data-i18n="receiptTypeCustomer">ជូនអតិថិជន</span>
+            </button>
+            <button type="button" id="btnTypeMerchant" class="receipt-toggle-btn" data-type="merchant">
+              <span>📊</span> <span data-i18n="receiptTypeMerchant">សម្រាប់ហាង</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-body" style="background: #0b0f19; padding: 14px; max-height: 65vh; overflow-y: auto;">
+        <!-- Container for print content -->
+        <div id="receiptPrintableArea">
+          
+          <!-- 1. POS Thermal View (80mm) -->
+          <div id="receiptThermalView" class="receipt-thermal-paper">
+            <div class="receipt-header">
+              <div class="receipt-logo">
+                <img src="logo.png" alt="MRC KH Logo" style="width: 52px; height: 52px; object-fit: contain;">
+              </div>
+              <h3 class="receipt-store-title" data-i18n="receiptStoreName">MRC KH - STORE & SERVICES</h3>
+              <p class="receipt-store-sub" data-i18n="receiptSubheader">មជ្ឈមណ្ឌលលក់ទំនិញ និងសេវាកម្មផ្លូវការ</p>
+              <p class="receipt-contact">Phnom Penh, Cambodia | Tel: +855 12 345 678</p>
+            </div>
+
+            <div class="receipt-divider">----------------------------------------</div>
+
+            <div class="receipt-meta">
+              <div class="receipt-meta-row">
+                <span data-i18n="receiptInvoice">លេខវិក្កយបត្រ:</span>
+                <strong id="rcptInvoiceNo">INV-20261025-001</strong>
+              </div>
+              <div class="receipt-meta-row">
+                <span data-i18n="receiptDate">កាលបរិច្ឆេទ:</span>
+                <span id="rcptDateTime">2026-10-25 10:30</span>
+              </div>
+              <div class="receipt-meta-row">
+                <span data-i18n="receiptCashier">អ្នកលក់ / បេឡា:</span>
+                <span id="rcptSeller">ឈឹម វិសាល</span>
+              </div>
+              <div class="receipt-meta-row" id="rcptCustomerRow">
+                <span data-i18n="receiptCustomer">អតិថិជន:</span>
+                <span id="rcptCustomer">-</span>
+              </div>
+              <div class="receipt-meta-row">
+                <span data-i18n="receiptPayment">វិធីបង់ប្រាក់:</span>
+                <span id="rcptPaymentMethod">ABA KHQR</span>
+              </div>
+            </div>
+
+            <div class="receipt-divider">----------------------------------------</div>
+
+            <div class="receipt-items-table">
+              <div class="receipt-item-header">
+                <span style="flex: 2;">មុខទំនិញ (Item)</span>
+                <span style="flex: 0.8; text-align: center;">ចំនួន (Qty)</span>
+                <span style="flex: 1.2; text-align: right;">តម្លៃ (Price)</span>
+                <span style="flex: 1.2; text-align: right;">សរុប (Total)</span>
+              </div>
+              <div id="rcptItemDetails" class="receipt-item-row">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <div class="receipt-divider">----------------------------------------</div>
+
+            <div class="receipt-totals">
+              <div class="receipt-total-row">
+                <span data-i18n="receiptSubtotal">សរុបរង (Subtotal):</span>
+                <strong id="rcptSubtotal">$0.00</strong>
+              </div>
+              <div class="receipt-total-row" id="rcptDiscountRow" style="display: none; color: #dc2626;">
+                <span id="rcptDiscountLabel">បញ្ចុះតម្លៃ (Discount):</span>
+                <strong id="rcptDiscountVal">-$0.00</strong>
+              </div>
+              <div class="receipt-total-row" id="rcptTaxRow" style="display: none; color: #0284c7;">
+                <span id="rcptTaxLabel">ពន្ធអាករ VAT (10%):</span>
+                <strong id="rcptTaxVal">+$0.00</strong>
+              </div>
+
+              <!-- Internal Merchant Only Section (Cost & Profit) -->
+              <div id="rcptMerchantThermalSection" style="display: none; background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 6px; padding: 6px 8px; margin: 4px 0;">
+                <div class="receipt-total-row">
+                  <span style="color: #64748b; font-size: 0.78rem;" data-i18n="receiptCostRef">ថ្លៃដើមសរុប (Cost Ref):</span>
+                  <span id="rcptCostRef" style="color: #64748b; font-weight: 600; font-size: 0.82rem;">$0.00</span>
+                </div>
+                <div class="receipt-total-row">
+                  <span style="color: #059669; font-size: 0.78rem;" data-i18n="receiptProfitRef">ប្រាក់ចំណេញសុទ្ធ (Profit):</span>
+                  <span id="rcptProfitRef" style="color: #059669; font-weight: 700; font-size: 0.85rem;">+$0.00</span>
+                </div>
+              </div>
+
+              <div class="receipt-total-row grand-total">
+                <span data-i18n="receiptGrandTotal">ទឹកប្រាក់ត្រូវទូទាត់ (TOTAL):</span>
+                <strong id="rcptGrandTotal">$0.00</strong>
+              </div>
+              <div class="receipt-total-row khr-total" style="color: #0284c7; font-weight: 700; font-size: 0.95rem; margin-top: 2px;">
+                <span data-i18n="receiptGrandTotalKHR">សរុបជាប្រាក់រៀល (KHR):</span>
+                <span id="rcptGrandTotalKHR">0 ៛</span>
+              </div>
+            </div>
+
+            <!-- Stylized KHQR Section -->
+            <div class="receipt-khqr-box">
+              <div class="khqr-badge">
+                <span class="khqr-icon">🇰🇭</span>
+                <strong>KHQR BAKONG</strong>
+              </div>
+              <div class="khqr-qr-visual">
+                <svg viewBox="0 0 100 100" class="khqr-svg" width="80" height="80">
+                  <rect width="100" height="100" fill="#ffffff"/>
+                  <!-- Top-Left Target -->
+                  <rect x="10" y="10" width="26" height="26" fill="#000000"/>
+                  <rect x="14" y="14" width="18" height="18" fill="#ffffff"/>
+                  <rect x="18" y="18" width="10" height="10" fill="#000000"/>
+                  <!-- Top-Right Target -->
+                  <rect x="64" y="10" width="26" height="26" fill="#000000"/>
+                  <rect x="68" y="14" width="18" height="18" fill="#ffffff"/>
+                  <rect x="72" y="18" width="10" height="10" fill="#000000"/>
+                  <!-- Bottom-Left Target -->
+                  <rect x="10" y="64" width="26" height="26" fill="#000000"/>
+                  <rect x="14" y="68" width="18" height="18" fill="#ffffff"/>
+                  <rect x="18" y="72" width="10" height="10" fill="#000000"/>
+                  <!-- QR Matrix Blocks -->
+                  <rect x="42" y="12" width="6" height="6" fill="#000000"/>
+                  <rect x="52" y="12" width="6" height="6" fill="#000000"/>
+                  <rect x="42" y="24" width="6" height="12" fill="#000000"/>
+                  <rect x="48" y="32" width="16" height="6" fill="#000000"/>
+                  <rect x="20" y="44" width="12" height="6" fill="#000000"/>
+                  <rect x="36" y="44" width="6" height="12" fill="#000000"/>
+                  <rect x="46" y="44" width="8" height="8" fill="#e11d48"/>
+                  <rect x="60" y="44" width="10" height="6" fill="#000000"/>
+                  <rect x="76" y="44" width="12" height="8" fill="#000000"/>
+                  <rect x="42" y="60" width="16" height="6" fill="#000000"/>
+                  <rect x="64" y="64" width="12" height="6" fill="#000000"/>
+                  <rect x="80" y="64" width="8" height="14" fill="#000000"/>
+                  <rect x="44" y="74" width="14" height="14" fill="#000000"/>
+                  <rect x="64" y="76" width="10" height="12" fill="#000000"/>
+                </svg>
+              </div>
+              <div class="khqr-scan-text" data-i18n="receiptScanKHQR">ស្កេនដើម្បីទូទាត់ប្រាក់ (Scan to Pay)</div>
+              <div class="khqr-banks-sub" data-i18n="receiptKhqrDesc">ទទួលយក Bakong, ABA, ACLEDA, Wing...</div>
+            </div>
+
+            <div class="receipt-divider">----------------------------------------</div>
+
+            <div class="receipt-footer">
+              <p class="receipt-policy" data-i18n="receiptReturnPolicy">ទំនិញទិញរួចមិនអាចប្តូរប្រាក់វិញបានទេ!</p>
+              <p data-i18n="receiptThankYou">សូមអរគុណចំពោះការគាំទ្រផលិតផល និងសេវាកម្មរបស់យើងខ្ញុំ!</p>
+              <div class="barcode-graphic">||| | ||||| || |||||| | |||| |||</div>
+              <div style="font-size: 0.65rem; color: #94a3b8; margin-top: 4px;">Powered by MRC KH System</div>
+            </div>
+          </div>
+
+          <!-- 2. Standard Formal Invoice View (A4 / A5) -->
+          <div id="receiptStandardView" class="receipt-standard-paper" style="display: none;">
+            <div class="standard-invoice-top">
+              <div class="standard-brand-left">
+                <img src="logo.png" alt="MRC KH" style="width: 58px; height: 58px; object-fit: contain;">
+                <div>
+                  <h2 style="margin: 0; font-size: 1.25rem; color: #0f172a; font-weight: 800;">MRC KH ENTERPRISE</h2>
+                  <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Retail, IT Equipment & Services Center</p>
+                  <p style="margin: 2px 0 0; font-size: 0.78rem; color: #64748b;">រាជធានីភ្នំពេញ | Tel: +855 12 345 678 | info@mrckh.com</p>
+                </div>
+              </div>
+              <div class="standard-title-right">
+                <div class="standard-inv-tag">INVOICE</div>
+                <div class="standard-inv-num" id="stdInvoiceNo">INV-20261025-001</div>
+                <div class="standard-paid-badge" data-i18n="receiptPaidStamp">PAID IN FULL</div>
+              </div>
+            </div>
+
+            <div class="standard-info-cards-grid">
+              <div class="standard-info-card">
+                <div class="card-caption">ចេញជូន (BILLED TO)</div>
+                <div class="card-name" id="stdCustomerName">អតិថិជនទូទៅ</div>
+                <div class="card-sub" id="stdCustomerNote">អតិថិជនទិញរាយ / Retail Customer</div>
+                <div class="card-sub">វិធីទូទាត់: <strong id="stdPaymentMethod">ABA Pay</strong></div>
+              </div>
+              <div class="standard-info-card">
+                <div class="card-caption">ព័ត៌មានវិក្កយបត្រ (INVOICE INFO)</div>
+                <div class="card-meta-line"><span>កាលបរិច្ឆេទ:</span> <strong id="stdDateTime">2026-10-25 10:30</strong></div>
+                <div class="card-meta-line"><span>អ្នកលក់ / បេឡា:</span> <strong id="stdSellerName">ចាន់ ដារ៉ា</strong></div>
+                <div class="card-meta-line"><span>ស្ថានភាព:</span> <span style="color: #059669; font-weight: 700;">បានទូទាត់រួច (Paid)</span></div>
+              </div>
+            </div>
+
+            <!-- Standard Items Table -->
+            <table class="standard-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px; text-align: center;">#</th>
+                  <th>ការពិពណ៌នាមុខទំនិញ / សេវាកម្ម</th>
+                  <th style="width: 140px;">ប្រភេទ</th>
+                  <th style="width: 70px; text-align: center;">ចំនួន</th>
+                  <th style="width: 100px; text-align: right;">តម្លៃរាយ</th>
+                  <th style="width: 110px; text-align: right;">តម្លៃសរុប</th>
+                </tr>
+              </thead>
+              <tbody id="stdItemsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+
+            <!-- Standard Summary -->
+            <div class="standard-summary-flex">
+              <div class="standard-notes-left">
+                <div class="terms-title">លក្ខខណ្ឌ & កំណត់ចំណាំ:</div>
+                <p class="terms-text" data-i18n="receiptReturnPolicy">ទំនិញទិញរួចមិនអាចប្តូរប្រាក់វិញបានទេ!</p>
+                <p class="terms-text">សូមរក្សាទុកវិក្កយបត្រនេះ សម្រាប់ការធានា និងការផ្ទៀងផ្ទាត់។</p>
+                
+                <!-- Internal Merchant Only section in Standard View -->
+                <div id="rcptMerchantStandardSection" style="display: none; margin-top: 10px; padding: 8px 12px; background: #f1f5f9; border-radius: 6px; border: 1px dashed #94a3b8; font-size: 0.8rem;">
+                  <strong style="color: #334155;">📊 របាយការណ៍ផ្ទៃក្នុងហាង (Merchant View):</strong>
+                  <div style="display: flex; gap: 16px; margin-top: 4px;">
+                    <span>ថ្លៃដើម: <strong id="stdCostRef">$0.00</strong></span>
+                    <span>ប្រាក់ចំណេញ: <strong id="stdProfitRef" style="color: #059669;">+$0.00</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="standard-totals-right">
+                <div class="std-row">
+                  <span>សរុបរង (Subtotal):</span>
+                  <strong id="stdSubtotal">$0.00</strong>
+                </div>
+                <div class="std-row" id="stdDiscountRow" style="display: none; color: #dc2626;">
+                  <span id="stdDiscountLabel">បញ្ចុះតម្លៃ (Discount):</span>
+                  <strong id="stdDiscountVal">-$0.00</strong>
+                </div>
+                <div class="std-row" id="stdTaxRow" style="display: none; color: #0284c7;">
+                  <span id="stdTaxLabel">ពន្ធអាករ VAT (10%):</span>
+                  <strong id="stdTaxVal">+$0.00</strong>
+                </div>
+                <div class="std-row std-grand-total">
+                  <span>សរុបរួម (GRAND TOTAL):</span>
+                  <strong id="stdGrandTotal">$0.00</strong>
+                </div>
+                <div class="std-row std-khr-total">
+                  <span>សរុបជាប្រាក់រៀល (KHR):</span>
+                  <strong id="stdGrandTotalKHR">0 ៛</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Standard Signatures Section -->
+            <div class="standard-signatures-grid">
+              <div class="sig-box">
+                <div class="sig-line"></div>
+                <div class="sig-label" data-i18n="receiptSignatureCustomer">ហត្ថលេខាអ្នកទិញ (Customer's Signature)</div>
+              </div>
+              <div class="sig-box">
+                <div class="sig-line"></div>
+                <div class="sig-label" data-i18n="receiptSignatureSeller">ហត្ថលេខាអ្នកលក់ / បេឡា (Authorized Signature)</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btnCopyReceiptText" class="btn btn-secondary btn-sm" title="Copy receipt info">
+            <span>📋</span> <span data-i18n="btnCopyReceiptInfo">ចម្លងព័ត៌មាន</span>
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" onclick="document.getElementById('receiptModal').classList.remove('active')" class="btn btn-secondary" data-i18n="btnClose">
+            បិទ
+          </button>
+          <button type="button" id="btnPrintReceiptBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 700; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+            <span>🖨️</span>
+            <span data-i18n="btnPrintNow">បោះពុម្ពវិក្កយបត្រ (Print)</span>
+          </button>
+        </div>
+  <!-- ================= Modal: Customer Add / Edit ================= -->
+  <div id="customerModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 560px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>🤝</span>
+          <h2 id="customerModalTitle" data-i18n="modalAddCustomer">បន្ថែមអតិថិជនថ្មី</h2>
+        </div>
+        <button id="btnCloseCustomerModal" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <form id="customerForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div>
+              <label class="form-label" data-i18n="colCustCode">កូដអតិថិជន</label>
+              <input type="text" id="custCodeInput" class="form-input" placeholder="ឧ. CUST-0006 (ទុកទំនេរដើម្បីបង្កើតស្វ័យប្រវត្តិ)">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="colCustType">ចំណាត់ថ្នាក់អតិថិជន</span> <span class="req">*</span>
+              </label>
+              <select id="custTypeInput" class="form-select" required>
+                <option value="Regular">អតិថិជនទូទៅ (Regular)</option>
+                <option value="VIP">អតិថិជន VIP (VIP)</option>
+                <option value="Wholesale">អតិថិជនទិញដុំ (Wholesale)</option>
+              </select>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label">
+                <span data-i18n="colCustName">ឈ្មោះអតិថិជន</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="custNameInput" class="form-input" required placeholder="ឧ. កែវ សុខុម (Keo Sokhom)">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="colCustPhone">លេខទូរស័ព្ទ</label>
+              <input type="text" id="custPhoneInput" class="form-input" placeholder="+855 12 345 678">
+            </div>
+
+            <div>
+              <label class="form-label">តេលេក្រាម (Telegram)</label>
+              <input type="text" id="custTelegramInput" class="form-input" placeholder="@username">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="colCustAddress">អាសយដ្ឋាន</label>
+              <input type="text" id="custAddressInput" class="form-input" placeholder="រាជធានីភ្នំពេញ">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="fieldNotes">កំណត់សម្គាល់បន្ថែម</label>
+              <textarea id="custNotesInput" class="form-textarea" placeholder="ព័ត៌មានបន្ថែម ឬការបញ្ចុះតម្លៃពិសេស..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelCustomerModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" class="btn btn-primary">
+            <span>💾</span> <span data-i18n="btnSave">រក្សាទុកទិន្នន័យ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Store Expense Add / Edit ================= -->
+  <div id="expenseModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>💸</span>
+          <h2 id="expenseModalTitle" data-i18n="modalAddExpense">កត់ត្រាចំណាយហាងថ្មី</h2>
+        </div>
+        <button id="btnCloseExpenseModal" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <form id="expenseForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div>
+              <label class="form-label">
+                <span data-i18n="colExpCategory">ប្រភេទចំណាយ</span> <span class="req">*</span>
+              </label>
+              <select id="expCategoryInput" class="form-select" required>
+                <option value="ជួលទីតាំង & ហាង">ជួលទីតាំង & ហាង (Rent)</option>
+                <option value="ទឹក ភ្លើង & អ៊ីនធឺណិត">ទឹក ភ្លើង & អ៊ីនធឺណិត (Utilities)</option>
+                <option value="សម្ភារៈការិយាល័យ & វេចខ្ចប់">សម្ភារៈការិយាល័យ & វេចខ្ចប់ (Supplies)</option>
+                <option value="ទីផ្សារ & ពាណិជ្ជកម្ម">ទីផ្សារ & ពាណិជ្ជកម្ម (Marketing)</option>
+                <option value="ថែទាំ & ជួសជុល">ថែទាំ & ជួសជុល (Maintenance)</option>
+                <option value="ផ្សេងៗ">ផ្សេងៗ (Other)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="colExpDate">កាលបរិច្ឆេទ</span> <span class="req">*</span>
+              </label>
+              <input type="date" id="expDateInput" class="form-input" required>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label">
+                <span data-i18n="colExpTitle">បរិយាយចំណាយ</span> <span class="req">*</span>
+              </label>
+              <input type="text" id="expTitleInput" class="form-input" required placeholder="ឧ. បង់ថ្លៃភ្លើង & ទឹកប្រចាំខែ ១០">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="colExpAmount">ទឹកប្រាក់ ($ USD)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="expAmountInput" class="form-input" min="0.01" step="any" required placeholder="0.00">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="colExpMethod">វិធីទូទាត់</label>
+              <select id="expPaymentMethodInput" class="form-select">
+                <option value="Cash">សាច់ប្រាក់សុទ្ធ (Cash)</option>
+                <option value="Bakong KHQR">Bakong KHQR</option>
+                <option value="ABA Bank">ABA Bank</option>
+                <option value="Wing">Wing</option>
+                <option value="Bank Transfer">ផ្ទេរប្រាក់ធនាគារ</option>
+              </select>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="colExpPayee">អ្នកទទួលប្រាក់ / ហាងផ្គត់ផ្គង់</label>
+              <input type="text" id="expPayeeInput" class="form-input" placeholder="ឧ. EDC Phnom Penh, Total Energies...">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label" data-i18n="fieldNotes">កំណត់ចំណាំ / លេខវិក្កយបត្រចំណាយ</label>
+              <textarea id="expNotesInput" class="form-textarea" placeholder="ព័ត៌មានលម្អិតបន្ថែម..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelExpenseModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" class="btn btn-primary">
+            <span>💾</span> <span data-i18n="btnSave">រក្សាទុកចំណាយ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Payroll Add / Edit ================= -->
+  <div id="payrollModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>👥</span>
+          <h2 id="payrollModalTitle">កត់ត្រាប្រាក់បៀវត្សរ៍បុគ្គលិក</h2>
+        </div>
+        <button id="btnClosePayrollModal" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <form id="payrollForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div style="grid-column: 1 / -1;">
+              <label class="form-label">
+                <span>ជ្រើសរើសបុគ្គលិក</span> <span class="req">*</span>
+              </label>
+              <select id="payEmpSelect" class="form-select" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="colPayMonth">ប្រចាំខែ</span> <span class="req">*</span>
+              </label>
+              <input type="month" id="payMonthInput" class="form-input" required>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span data-i18n="colPayBase">ប្រាក់ខែគោល ($)</span> <span class="req">*</span>
+              </label>
+              <input type="number" id="payBaseSalaryInput" class="form-input" min="0" step="any" required placeholder="0.00">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="colPayBonus">ប្រាក់លើកទឹកចិត្ត ($ Bonus)</label>
+              <input type="number" id="payBonusInput" class="form-input" min="0" step="any" value="0">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="colPayAllowance">ប្រាក់ឧបត្ថម្ភ ($ Allowance)</label>
+              <input type="number" id="payAllowanceInput" class="form-input" min="0" step="any" value="0">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="colPayDeduction">កាត់ប្រាក់ ($ Deductions)</label>
+              <input type="number" id="payDeductionsInput" class="form-input" min="0" step="any" value="0">
+            </div>
+
+            <div>
+              <label class="form-label" data-i18n="colPayStatus">ស្ថានភាពទូទាត់</label>
+              <select id="payStatusInput" class="form-select">
+                <option value="Paid">បានបើកជូនរួច (Paid)</option>
+                <option value="Pending">រង់ចាំបើក (Pending)</option>
+              </select>
+            </div>
+
+            <div style="grid-column: 1 / -1; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: var(--text-subtle);">ប្រាក់ត្រូវបើកសុទ្ធ (Net Payout):</span>
+              <strong id="payNetPreview" style="font-size: 1.3rem; color: #10b981;">$0.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" id="btnCancelPayrollModal" class="btn btn-secondary" data-i18n="btnCancel">បោះបង់</button>
+          <button type="submit" class="btn btn-primary">
+            <span>💾</span> <span data-i18n="btnSave">រក្សាទុកប្រាក់ខែ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Official Employee Pay Slip (Printable) ================= -->
+  <div id="paySlipModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>🧾</span>
+          <h2 data-i18n="btnPrintPaySlip">ប័ណ្ណបើកប្រាក់បៀវត្សរ៍ (Official Pay Slip)</h2>
+        </div>
+        <button onclick="document.getElementById('paySlipModal').classList.remove('active')" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="paySlipPrintArea" class="payslip-paper">
+          <!-- Populated dynamically via renderPaySlip -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button type="button" onclick="document.getElementById('paySlipModal').classList.remove('active')" class="btn btn-secondary" data-i18n="btnClose">បិទ</button>
+        <button type="button" id="btnPrintPaySlipActionBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);">
+          <span>🖨️</span> <span>បោះពុម្ពប័ណ្ណប្រាក់ខែ (Print Slip)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Keyboard Shortcuts Guide ================= -->
+  <div id="shortcutsModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>⌨️</span>
+          <h2 data-i18n="keyboardShortcuts">ផ្លូវកាត់ក្តារចុច (Keyboard Shortcuts)</h2>
+        </div>
+        <button onclick="document.getElementById('shortcutsModal').classList.remove('active')" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 0.9rem;" data-i18n="shortcutsDesc">បញ្ជីផ្លូវកាត់ក្តារចុចសម្រាប់ការរុករករហ័ស</p>
+        <div class="shortcuts-grid">
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>1</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutDash">ផ្ទាំងគ្រប់គ្រងទូទៅ</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>2</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutSales">ការលក់ & POS</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>3</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutEmp">បញ្ជីបុគ្គលិក</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>4</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutLeaves">ច្បាប់សម្រាក</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>5</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutCust">អតិថិជន & CRM</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>6</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutFin">ហិរញ្ញវត្ថុ & ប្រាក់ខែ</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>7</kbd></span>
+            <span class="shortcut-desc" data-i18n="navShortcutSettings">ការកំណត់</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>/</kbd> ឬ <kbd>Ctrl</kbd> + <kbd>F</kbd></span>
+            <span class="shortcut-desc">ស្វែងរករហ័ស (Quick Search)</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Ctrl</kbd> + <kbd>P</kbd></span>
+            <span class="shortcut-desc">បោះពុម្ព (Print Invoice / Report)</span>
+          </div>
+          <div class="shortcut-item">
+            <span class="shortcut-key"><kbd>Esc</kbd></span>
+            <span class="shortcut-desc">បិទផ្ទាំង Dialog / Drawer</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" onclick="document.getElementById('shortcutsModal').classList.remove('active')" class="btn btn-primary" data-i18n="closeShortcuts">យល់ព្រម</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notifications -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
