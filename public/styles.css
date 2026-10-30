@@ -3347,6 +3347,336 @@ body {
   border-color: #a5f3fc;
 }
 
+/* ==========================================================================
+   Comprehensive Mobile & Tablet Responsive Design (Phone & Tablet UI)
+   ========================================================================== */
+
+/* 1. Global Touch & Container Adjustments */
+@media (max-width: 900px) {
+  html, body {
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 12px 64px !important;
+    margin: 0 !important;
+  }
+
+  /* Compact Native-style Mobile Header */
+  .main-header {
+    position: relative !important;
+    top: 0 !important;
+    margin-bottom: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .main-header .brand-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .main-header .brand-logo-wrapper {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+  }
+
+  .main-header .brand-info h1 {
+    font-size: 1.1rem !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .main-header .brand-info p,
+  .main-header [data-i18n="appSubtitle"] {
+    display: none !important; /* Hide long subtitle to prevent screen blocking */
+  }
+
+  .brand-tag {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .header-status-widget {
+    display: none !important; /* Clean up status ticker on phone */
+  }
+
+  .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  #btnHeaderAction {
+    flex: 1 !important;
+    height: 40px !important;
+    padding: 0 14px !important;
+    font-size: 0.85rem !important;
+    justify-content: center !important;
+  }
+
+  /* Hide desktop-only buttons on mobile */
+  #btnExportCsv,
+  #btnResetDemo,
+  #btnShortcutsGuide {
+    display: none !important;
+  }
+
+  .lang-switch-btn {
+    height: 38px !important;
+    padding: 0 10px !important;
+    font-size: 0.8rem !important;
+  }
+
+  .btn-icon {
+    width: 38px !important;
+    height: 38px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Smooth Swipeable Navigation Tabs Bar */
+  .nav-tabs-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    margin-bottom: 14px !important;
+    border-radius: 14px !important;
+    position: sticky !important;
+    top: 6px !important;
+    z-index: 45 !important;
+  }
+
+  .nav-tab-btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    padding: 8px 14px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* Compact Dashboard KPI Grid */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .stat-card {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .stat-value {
+    font-size: 1.25rem !important;
+  }
+
+  .stat-label {
+    font-size: 0.74rem !important;
+  }
+
+  .stat-icon-wrapper {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .stat-subtext {
+    font-size: 0.7rem !important;
+  }
+
+  /* Dashboard Charts & Lists */
+  .dashboard-charts-grid,
+  .dashboard-breakdowns-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .chart-card {
+    padding: 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .chart-svg-container {
+    min-height: 180px !important;
+  }
+
+  /* POS Layout for Tablet & Phone */
+  .pos-layout-container {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .pos-filter-bar {
+    padding: 8px 12px !important;
+  }
+
+  .pos-products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .pos-product-card {
+    padding: 10px !important;
+  }
+
+  .pos-product-img-box {
+    height: 80px !important;
+    font-size: 1.8rem !important;
+  }
+
+  .pos-product-name {
+    font-size: 0.84rem !important;
+  }
+
+  .pos-product-price {
+    font-size: 0.95rem !important;
+  }
+
+  .pos-cart-panel {
+    position: static !important;
+    max-height: none !important;
+    margin-top: 10px !important;
+  }
+
+  /* Toolbars, Search & Filters */
+  .toolbar,
+  .filter-controls,
+  .sales-filters-row,
+  .attendance-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .search-input-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .filter-selects-group,
+  .attendance-filters-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .attendance-stats-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Tables: Smooth Horizontal Scroll */
+  .table-responsive,
+  .table-container {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--card-border) !important;
+    display: block !important;
+  }
+
+  .data-table {
+    min-width: 620px !important;
+  }
+
+  /* Employee Cards Grid on Phone/Tablet */
+  .employee-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Bottom-Sheet Style Modals on Mobile */
+  .modal-backdrop,
+  .modal {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-container,
+  .modal-content,
+  .modal-drawer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 90vh !important;
+    padding: 16px !important;
+    overflow-y: auto !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .form-input,
+  .form-select {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    height: 44px !important;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .modal-footer .btn {
+    width: 100% !important;
+    height: 44px !important;
+    justify-content: center !important;
+  }
+}
+
+/* 2. Extra Small Phone Screen (iPhone SE, small devices <= 480px) */
+@media (max-width: 480px) {
+  .app-container {
+    padding: 8px 8px 56px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .stat-card {
+    padding: 10px !important;
+  }
+
+  .stat-value {
+    font-size: 1.15rem !important;
+  }
+
+  .filter-selects-group,
+  .attendance-filters-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .quick-chips-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+}
+
+
 
 
 
