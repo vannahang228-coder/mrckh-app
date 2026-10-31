@@ -28,6 +28,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+// Universal Static Serving: Serve from root AND public directory
+app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Enable WAL mode and foreign keys for speed & reliability
@@ -623,6 +625,8 @@ const sampleProducts = [
 ];
 
 function seedDatabase(force = false) {
+  // Only seed sample demo data if explicitly requested via force=true
+  if (!force) return;
   const rowCount = db.prepare('SELECT COUNT(*) as count FROM employees').get().count;
   if (rowCount === 0 || force) {
     if (force) {
@@ -1122,34 +1126,14 @@ function seedDatabase(force = false) {
   }
 }
 
-// Initial seed
-seedDatabase(false);
+// Initial seed disabled - Clean database for user custom data entry
+// seedDatabase(false);
 
 function seedAttendancesIfEmpty() {
-  try {
-    const count = db.prepare('SELECT COUNT(*) as count FROM attendances').get().count;
-    if (count === 0) {
-      const today = getLocalDateStr();
-      const emps = db.prepare("SELECT id, emp_code, shift_start, shift_end FROM employees WHERE status = 'Active'").all();
-      if (emps.length > 0) {
-        const insertAtt = db.prepare(`
-          INSERT INTO attendances (employee_id, attendance_date, check_in, check_out, status, work_hours, notes)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        if (emps[0]) insertAtt.run(emps[0].id, today, '07:55', '17:05', 'On Time', 8.2, 'ទាន់ពេលវេលា');
-        if (emps[1]) insertAtt.run(emps[1].id, today, '08:00', null, 'On Time', 0, 'កំពុងបំពេញការងារ');
-        if (emps[2]) insertAtt.run(emps[2].id, today, '08:25', null, 'Late', 0, 'ស្ទះចរាចរណ៍');
-        if (emps[3]) insertAtt.run(emps[3].id, today, '07:48', '17:00', 'On Time', 8.2, '');
-        if (emps[4]) insertAtt.run(emps[4].id, today, '08:02', null, 'On Time', 0, '');
-        if (emps[5]) insertAtt.run(emps[5].id, today, '07:58', '16:00', 'Early Leave', 7.0, 'សុំចេញមុនកិច្ចការបន្ទាន់');
-      }
-    }
-  } catch (err) {
-    console.error('Error seeding sample attendances:', err);
-  }
+  // Disabled auto-seeding dummy attendances
+  return;
 }
-seedAttendancesIfEmpty();
+// seedAttendancesIfEmpty();
 
 // Helper to generate next employee code
 function getNextEmpCode() {
@@ -3552,9 +3536,30 @@ app.post('/api/seed', (req, res) => {
   }
 });
 
+// Clear all sample demo data
+app.post('/api/clear-all-data', (req, res) => {
+  try {
+    const tables = ['sale_items', 'sales', 'products', 'leave_requests', 'attendances', 'payrolls', 'expenses', 'customers', 'employees'];
+    for (const t of tables) {
+      db.prepare(`DELETE FROM ${t}`).run();
+    }
+    try {
+      db.prepare('DELETE FROM sqlite_sequence').run();
+    } catch(e) {}
+    res.json({ success: true, message: 'ទិន្នន័យគំរូទាំងអស់ត្រូវបានលុបចេញដោយជោគជ័យ។' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Catch-all route to serve index.html
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const rootIndex = path.join(__dirname, 'index.html');
+  const pubIndex = path.join(__dirname, 'public', 'index.html');
+  if (fs.existsSync(rootIndex)) {
+    return res.sendFile(rootIndex);
+  }
+  res.sendFile(pubIndex);
 });
 
 // Start Server function with dynamic port fallback
