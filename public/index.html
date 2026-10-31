@@ -2515,7 +2515,7 @@
                 <img src="logo.png" alt="MRC KH Logo" style="width: 52px; height: 52px; object-fit: contain;">
               </div>
               <h3 class="receipt-store-title" data-i18n="receiptStoreName">MRC KH - STORE & SERVICES</h3>
-              <p class="receipt-store-sub" data-i18n="receiptSubheader">មជ្ឈមណ្ឌលលក់ទំនិញ និងសេវាកម្មផ្លូវការ</p>
+              <p class="receipt-store-sub" data-i18n="receiptSubheader">ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក</p>
               <p class="receipt-contact" style="font-weight: 700; color: #0f172a;">ផ្នែកលក់: 012 241 469 / 096 445 48 32 / 097 855 52 82</p>
             </div>
 
@@ -2596,89 +2596,82 @@
               </div>
             </div>
 
-            <!-- Stylized KHQR Section -->
-            <div class="receipt-khqr-box">
-              <div class="khqr-badge">
-                <span class="khqr-icon">🇰🇭</span>
+            <!-- Real ABA & ACLEDA KHQR Section (Replacing Image 3) -->
+            <div class="receipt-khqr-box" style="padding: 8px 6px; background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; margin: 8px 0;">
+              <div class="khqr-badge" style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11.5px; font-weight: 900; color: #dc2626; margin-bottom: 6px; letter-spacing: 0.5px; font-family: monospace;">
+                <span>🇰🇭</span>
                 <strong>KHQR BAKONG</strong>
               </div>
-              <div class="khqr-qr-visual">
-                <svg viewBox="0 0 100 100" class="khqr-svg" width="80" height="80">
-                  <rect width="100" height="100" fill="#ffffff"/>
-                  <!-- Top-Left Target -->
-                  <rect x="10" y="10" width="26" height="26" fill="#000000"/>
-                  <rect x="14" y="14" width="18" height="18" fill="#ffffff"/>
-                  <rect x="18" y="18" width="10" height="10" fill="#000000"/>
-                  <!-- Top-Right Target -->
-                  <rect x="64" y="10" width="26" height="26" fill="#000000"/>
-                  <rect x="68" y="14" width="18" height="18" fill="#ffffff"/>
-                  <rect x="72" y="18" width="10" height="10" fill="#000000"/>
-                  <!-- Bottom-Left Target -->
-                  <rect x="10" y="64" width="26" height="26" fill="#000000"/>
-                  <rect x="14" y="68" width="18" height="18" fill="#ffffff"/>
-                  <rect x="18" y="72" width="10" height="10" fill="#000000"/>
-                  <!-- QR Matrix Blocks -->
-                  <rect x="42" y="12" width="6" height="6" fill="#000000"/>
-                  <rect x="52" y="12" width="6" height="6" fill="#000000"/>
-                  <rect x="42" y="24" width="6" height="12" fill="#000000"/>
-                  <rect x="48" y="32" width="16" height="6" fill="#000000"/>
-                  <rect x="20" y="44" width="12" height="6" fill="#000000"/>
-                  <rect x="36" y="44" width="6" height="12" fill="#000000"/>
-                  <rect x="46" y="44" width="8" height="8" fill="#e11d48"/>
-                  <rect x="60" y="44" width="10" height="6" fill="#000000"/>
-                  <rect x="76" y="44" width="12" height="8" fill="#000000"/>
-                  <rect x="42" y="60" width="16" height="6" fill="#000000"/>
-                  <rect x="64" y="64" width="12" height="6" fill="#000000"/>
-                  <rect x="80" y="64" width="8" height="14" fill="#000000"/>
-                  <rect x="44" y="74" width="14" height="14" fill="#000000"/>
-                  <rect x="64" y="76" width="10" height="12" fill="#000000"/>
-                </svg>
+              
+              <div style="display: flex; justify-content: center; align-items: stretch; gap: 8px; margin-bottom: 6px;">
+                <!-- 1. ABA PAY QR (Image 1) -->
+                <div style="flex: 1; max-width: 140px; border: 1.5px solid #005f9e; border-radius: 6px; padding: 4px; background: #ffffff; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                  <img src="qr_aba.jpg" alt="ABA PAY QR" style="width: 100%; height: auto; max-height: 165px; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto;">
+                  <div style="margin-top: 4px; font-size: 9px; font-weight: 800; color: #005f9e;">
+                    ABA: 001878305
+                  </div>
+                  <div style="font-size: 8px; font-weight: 700; color: #0f172a;">MOY CHHANY</div>
+                </div>
+
+                <!-- 2. ACLEDA BANK QR (Image 2) -->
+                <div style="flex: 1; max-width: 140px; border: 1.5px solid #1e3a8a; border-radius: 6px; padding: 4px; background: #ffffff; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                  <img src="qr_acleda.jpg" alt="ACLEDA BANK QR" style="width: 100%; height: auto; max-height: 165px; object-fit: contain; border-radius: 4px; display: block; margin: 0 auto;">
+                  <div style="margin-top: 4px; font-size: 9px; font-weight: 800; color: #1e3a8a;">
+                    ACLEDA: 12887668
+                  </div>
+                  <div style="font-size: 8px; font-weight: 700; color: #0f172a;">Moy Chhany</div>
+                </div>
               </div>
-              <div class="khqr-scan-text" data-i18n="receiptScanKHQR">ស្កេនដើម្បីទូទាត់ប្រាក់ (Scan to Pay)</div>
-              <div class="khqr-banks-sub" data-i18n="receiptKhqrDesc">ទទួលយក Bakong, ABA, ACLEDA, Wing...</div>
+
+              <div class="khqr-scan-text" style="font-size: 10.5px; font-weight: 800; color: #0f172a; margin-top: 4px;">ស្កេនដើម្បីទូទាត់ប្រាក់ (Scan to Pay)</div>
+              <div class="khqr-banks-sub" style="font-size: 8.5px; color: #64748b; margin-top: 2px;">ទទួលយក Bakong, ABA, ACLEDA, Wing...</div>
             </div>
 
             <!-- Bank Accounts Info Box (Thermal) -->
-            <div class="receipt-banks-card" style="margin: 8px 0; border: 1.5px dashed #64748b; border-radius: 6px; padding: 6px 8px; background: #ffffff; color: #0f172a; text-align: left; font-size: 10px; line-height: 1.4;">
-              <div style="font-weight: 800; font-size: 10.5px; border-bottom: 1px solid #cbd5e1; padding-bottom: 3px; margin-bottom: 5px; text-align: center; color: #0f172a;">
-                🏦 ព័ត៌មានគណនីបង់ប្រាក់ (Payment Accounts)
-              </div>
-              
-              <!-- ACLEDA -->
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px dashed #e2e8f0;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="display: inline-block; background: #1e3a8a; color: #fbbf24; font-weight: 800; font-size: 8px; padding: 1px 4px; border-radius: 3px;">ACLEDA</span>
-                  <strong style="color: #0f172a;">MOY CHHANY</strong>
-                </div>
-                <div style="text-align: right; font-weight: 700; color: #1e3a8a;">
-                  <div>$/៛ } 0964454832</div>
-                </div>
+            <div class="receipt-banks-card" style="margin: 8px 0; border: 1.5px solid #0f172a; border-radius: 6px; padding: 6px 8px; background: #ffffff; color: #0f172a; text-align: center; font-family: 'Kantumruy Pro', sans-serif;">
+              <!-- Sales Phone Header -->
+              <div style="font-size: 10.5px; font-weight: 800; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 6px;">
+                ផ្នែកលក់: 012 241 469 / 096 445 48 32 / 097 855 52 82
               </div>
 
-              <!-- ABA Mobile -->
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px dashed #e2e8f0;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="display: inline-block; background: #005f9e; color: #ffffff; font-weight: 800; font-size: 8px; padding: 1px 4px; border-radius: 3px;">ABA</span>
-                  <strong style="color: #005f9e;">ABA Mobile</strong>
+              <!-- 3 Bank Items Row (Exact layout from Image 1) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; text-align: left;">
+                
+                <!-- 1. ACLEDA -->
+                <div style="flex: 1.1; display: flex; align-items: center; gap: 4px; border-right: 1px solid #94a3b8; padding-right: 4px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #1e3a8a; display: flex; align-items: center; justify-content: center; color: #fbbf24; font-size: 11px; flex-shrink: 0;">
+                    🦅
+                  </div>
+                  <div style="line-height: 1.15;">
+                    <div style="font-size: 8.5px; font-weight: 800; color: #0f172a; white-space: nowrap;">MOY CHHANY</div>
+                    <div style="font-size: 8px; font-weight: 700; color: #1e3a8a; white-space: nowrap;">
+                      $/៛ } 0964454832
+                    </div>
+                  </div>
                 </div>
-                <div style="text-align: right; font-weight: 700; font-size: 9.5px;">
-                  <div style="color: #005f9e;">$ 001878305</div>
-                  <div style="color: #0284c7;">៛ 001861596</div>
-                </div>
-              </div>
 
-              <!-- Wing Bank -->
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                <div style="display: flex; align-items: center; gap: 4px;">
-                  <span style="display: inline-block; background: #84cc16; color: #14532d; font-weight: 800; font-size: 8px; padding: 1px 4px; border-radius: 3px;">Wing</span>
-                  <strong style="color: #0f172a;">វេរលុយ</strong>
+                <!-- 2. ABA Mobile -->
+                <div style="flex: 1; display: flex; align-items: center; gap: 4px; border-right: 1px solid #94a3b8; padding-right: 4px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #005f9e; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; flex-shrink: 0; line-height: 1;">
+                    <span style="font-size: 7px; font-weight: 900;">ABA</span>
+                  </div>
+                  <div style="line-height: 1.15; font-size: 8px; font-weight: 700; white-space: nowrap;">
+                    <div style="color: #005f9e;">$ 001878305</div>
+                    <div style="color: #0284c7;">៛ 001861596</div>
+                  </div>
                 </div>
-                <strong style="color: #dc2626; font-size: 11px; font-weight: 900; letter-spacing: 0.5px;">078344706</strong>
-              </div>
 
-              <!-- Sales Contacts -->
-              <div style="margin-top: 4px; padding-top: 4px; border-top: 1px solid #cbd5e1; font-size: 9px; font-weight: 800; color: #0f172a; text-align: center;">
-                📞 ផ្នែកលក់: 012 241 469 / 096 445 48 32 / 097 855 52 82
+                <!-- 3. Wing Bank -->
+                <div style="flex: 0.9; display: flex; align-items: center; gap: 4px;">
+                  <div style="width: 22px; height: 22px; border-radius: 4px; background: #84cc16; display: flex; align-items: center; justify-content: center; color: #14532d; font-size: 6.5px; font-weight: 900; flex-shrink: 0; line-height: 1;">
+                    Wing
+                  </div>
+                  <div style="line-height: 1.15;">
+                    <div style="font-size: 8px; font-weight: 800; color: #0f172a;">វេរលុយ</div>
+                    <div style="font-size: 9px; font-weight: 900; color: #dc2626; white-space: nowrap;">078344706</div>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -2699,7 +2692,7 @@
                 <img src="logo.png" alt="MRC KH" style="width: 58px; height: 58px; object-fit: contain;">
                 <div>
                   <h2 style="margin: 0; font-size: 1.25rem; color: #0f172a; font-weight: 800;">MRC KH ENTERPRISE</h2>
-                  <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">Retail, IT Equipment & Services Center</p>
+                  <p style="margin: 2px 0 0; font-size: 0.8rem; color: #64748b;">ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក (New & Secondhand Retail Store)</p>
                   <p style="margin: 2px 0 0; font-size: 0.78rem; font-weight: 700; color: #0f172a;">ផ្នែកលក់: 012 241 469 / 096 445 48 32 / 097 855 52 82</p>
                 </div>
               </div>
@@ -2835,6 +2828,25 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Real ABA & ACLEDA QR Codes (Standard Invoice) -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin: 12px 0 16px;">
+              <!-- ABA QR Card -->
+              <div style="text-align: center; border: 1.5px solid #005f9e; border-radius: 8px; padding: 8px; background: #ffffff; width: 150px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+                <img src="qr_aba.jpg" alt="ABA PAY QR" style="width: 100%; height: auto; object-fit: contain; border-radius: 4px; display: block;">
+                <div style="font-size: 10.5px; font-weight: 800; color: #005f9e; margin-top: 4px;">ABA PAY ($)</div>
+                <div style="font-size: 9.5px; font-weight: 700; color: #0f172a;">001878305</div>
+                <div style="font-size: 8.5px; color: #64748b;">MOY CHHANY</div>
+              </div>
+
+              <!-- ACLEDA QR Card -->
+              <div style="text-align: center; border: 1.5px solid #1e3a8a; border-radius: 8px; padding: 8px; background: #ffffff; width: 150px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+                <img src="qr_acleda.jpg" alt="ACLEDA BANK QR" style="width: 100%; height: auto; object-fit: contain; border-radius: 4px; display: block;">
+                <div style="font-size: 10.5px; font-weight: 800; color: #1e3a8a; margin-top: 4px;">ACLEDA BANK ($/៛)</div>
+                <div style="font-size: 9.5px; font-weight: 700; color: #0f172a;">ID: 12887668</div>
+                <div style="font-size: 8.5px; color: #64748b;">Moy Chhany</div>
               </div>
             </div>
 

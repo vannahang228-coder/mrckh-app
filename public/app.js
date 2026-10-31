@@ -4154,6 +4154,7 @@
       <html lang="${window.i18n.currentLang || 'km'}">
       <head>
         <meta charset="UTF-8">
+        <base href="${window.location.origin}/">
         <title>វិក្កយបត្រ - ${sale.invoice_no}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4194,7 +4195,9 @@
             .receipt-total-row { display: flex; justify-content: space-between; }
             .receipt-total-row.grand-total { font-size: 14px; font-weight: 800; border-top: 1px dashed #000; padding-top: 5px; margin-top: 4px; }
             .receipt-total-row.khr-total { font-size: 12px; font-weight: 700; color: #0369a1; }
-            .receipt-khqr-box { margin: 8px 0 4px 0; text-align: center; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; background: #f8fafc; }
+            .receipt-khqr-box { margin: 6px 0; text-align: center; border: 1.5px solid #0f172a; border-radius: 6px; padding: 4px; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .receipt-khqr-box img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+            .receipt-banks-card { margin: 6px 0; border: 1.5px solid #0f172a; border-radius: 6px; padding: 4px 6px; background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: 'Kantumruy Pro', sans-serif; }
             .khqr-badge { font-size: 10px; font-weight: 800; color: #e11d48; margin-bottom: 4px; }
             .khqr-scan-text { font-size: 10px; font-weight: 700; color: #0f172a; }
             .khqr-banks-sub { font-size: 9px; color: #64748b; }
@@ -4246,10 +4249,38 @@
     `);
     doc.close();
 
-    iframe.contentWindow.focus();
-    setTimeout(() => {
-      iframe.contentWindow.print();
-    }, 350);
+    // Ensure all images (QR codes and Logo) are loaded before invoking print
+    const imgs = doc.images;
+    let loaded = 0;
+    const totalImgs = imgs.length;
+    let hasPrinted = false;
+    const triggerPrint = () => {
+      if (hasPrinted) return;
+      hasPrinted = true;
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (err) {
+        console.error('Print trigger error:', err);
+      }
+    };
+
+    if (totalImgs === 0) {
+      setTimeout(triggerPrint, 300);
+    } else {
+      Array.from(imgs).forEach(img => {
+        if (img.complete) {
+          loaded++;
+        } else {
+          img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded >= totalImgs) triggerPrint();
+          };
+        }
+      });
+      if (loaded >= totalImgs) triggerPrint();
+      setTimeout(triggerPrint, 1000); // Safety fallback timeout
+    }
   }
 
   function copyReceiptTextAction() {
@@ -4498,10 +4529,38 @@
     `);
     doc.close();
 
-    iframe.contentWindow.focus();
-    setTimeout(() => {
-      iframe.contentWindow.print();
-    }, 350);
+    // Ensure all images (QR codes and Logo) are loaded before invoking print
+    const imgs = doc.images;
+    let loaded = 0;
+    const totalImgs = imgs.length;
+    let hasPrinted = false;
+    const triggerPrint = () => {
+      if (hasPrinted) return;
+      hasPrinted = true;
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (err) {
+        console.error('Print trigger error:', err);
+      }
+    };
+
+    if (totalImgs === 0) {
+      setTimeout(triggerPrint, 300);
+    } else {
+      Array.from(imgs).forEach(img => {
+        if (img.complete) {
+          loaded++;
+        } else {
+          img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded >= totalImgs) triggerPrint();
+          };
+        }
+      });
+      if (loaded >= totalImgs) triggerPrint();
+      setTimeout(triggerPrint, 1000); // Safety fallback timeout
+    }
   }
 
   function exportSalesCsv() {

@@ -344,7 +344,7 @@ const i18n = {
       // Receipt Modal & Printing
       receiptTitle: 'វិក្កយបត្រលក់ទំនិញ',
       receiptStoreName: 'MRC KH - STORE & SERVICES',
-      receiptSubheader: 'មជ្ឈមណ្ឌលលក់ទំនិញ និងសេវាកម្មផ្លូវការ',
+      receiptSubheader: 'ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក',
       receiptDate: 'កាលបរិច្ឆេទ:',
       receiptInvoice: 'លេខវិក្កយបត្រ:',
       receiptCashier: 'អ្នកលក់:',
@@ -416,7 +416,7 @@ const i18n = {
       posTaxStandard: 'ពន្ធស្តង់ដារ (10%)',
       posGrandTotal: 'ទឹកប្រាក់ត្រូវទូទាត់សរុប',
       posEstimatedProfit: 'ចំណេញប៉ាន់ស្មាន',
-      btnCheckout: 'កត់ត្រាការលក់ (Checkout)',
+      btnCheckout: 'កត់ត្រាការលក់',
       btnCheckoutPrint: 'កត់ត្រា & ព្រីនវិក្កយបត្រ',
       itemsCount: '{count} មុខទំនិញ',
       btnAddToCart: 'ដាក់ចូលកន្ត្រក',
@@ -884,7 +884,7 @@ const i18n = {
       // Receipt Modal & Printing
       receiptTitle: 'Sales Invoice / Receipt',
       receiptStoreName: 'MRC KH - STORE & SERVICES',
-      receiptSubheader: 'Official Retail & Enterprise Services',
+      receiptSubheader: 'New & Secondhand Retail Store',
       receiptDate: 'Date:',
       receiptInvoice: 'Invoice #:',
       receiptCashier: 'Cashier:',
@@ -958,8 +958,8 @@ const i18n = {
       posTaxStandard: 'Standard VAT (10%)',
       posGrandTotal: 'Grand Total Amount',
       posEstimatedProfit: 'Estimated Profit',
-      btnCheckout: 'Checkout Order',
-      btnCheckoutPrint: 'Checkout & Print Invoice',
+      btnCheckout: 'Checkout',
+      btnCheckoutPrint: 'Checkout & Print',
       itemsCount: '{count} items',
       btnAddToCart: 'Add to Cart',
 
