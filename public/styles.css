@@ -624,6 +624,114 @@ body {
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
+/* ==========================================================================
+   Quick Attendance Clock In / Clock Out Form
+   ========================================================================== */
+.attendance-clock-form {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.4fr) minmax(220px, 1.1fr) minmax(170px, 1fr) auto;
+  gap: 14px;
+  align-items: flex-end;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.attendance-clock-form .form-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.attendance-clock-form .form-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.attendance-clock-form .clock-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.attendance-clock-form .clock-btn {
+  white-space: nowrap;
+  padding: 10px 16px !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-md) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  flex: 1;
+}
+
+.attendance-clock-form .clock-btn-in {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  border: 1px solid #059669 !important;
+  color: #ffffff !important;
+}
+
+.attendance-clock-form .clock-btn-in:hover {
+  background: linear-gradient(135deg, #047857, #059669) !important;
+  transform: translateY(-1px);
+}
+
+.attendance-clock-form .clock-btn-out {
+  background: linear-gradient(135deg, #e11d48, #f43f5e) !important;
+  border: 1px solid #e11d48 !important;
+  color: #ffffff !important;
+}
+
+.attendance-clock-form .clock-btn-out:hover {
+  background: linear-gradient(135deg, #be123c, #e11d48) !important;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1180px) {
+  .attendance-clock-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .attendance-clock-form .clock-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .attendance-clock-form .clock-btn {
+    width: 100%;
+    padding: 11px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .attendance-clock-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .attendance-clock-form .clock-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .attendance-clock-form .clock-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* View Switcher */
 .view-switcher {
   display: flex;
