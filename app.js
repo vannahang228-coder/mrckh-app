@@ -5873,11 +5873,11 @@
     if (!DOM.attClockEmployeeSelect) return;
     const activeStaff = state.employees.filter(e => e.status === 'Active');
     DOM.attClockEmployeeSelect.innerHTML = `<option value="">-- ជ្រើសរើសបុគ្គលិក --</option>` +
-      activeStaff.map(e => `
-        <option value="${e.id}">
-          ${escapeHtml(e.emp_code)} - ${escapeHtml(e.first_name)} ${escapeHtml(e.last_name)} (${escapeHtml(e.khmer_name || '')}) [${e.shift_start || '08:00'} - ${e.shift_end || '17:00'}]
-        </option>
-      `).join('');
+      activeStaff.map(e => {
+        const nameDisplay = e.khmer_name ? `${escapeHtml(e.khmer_name)} (${escapeHtml(e.first_name)} ${escapeHtml(e.last_name)})` : `${escapeHtml(e.first_name)} ${escapeHtml(e.last_name)}`;
+        const shiftDisplay = `[${e.shift_start || '08:00'} - ${e.shift_end || '17:00'}]`;
+        return `<option value="${e.id}">${escapeHtml(e.emp_code)} - ${nameDisplay} ${shiftDisplay}</option>`;
+      }).join('');
 
     if (DOM.attClockDate && !DOM.attClockDate.value) {
       DOM.attClockDate.value = getLocalDateStr();

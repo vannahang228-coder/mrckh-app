@@ -483,15 +483,15 @@
           </div>
         </div>
 
-        <form id="attendanceClockForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: flex-end;">
-          <div>
-            <label class="form-label">ជ្រើសរើសបុគ្គលិក <span class="req">*</span></label>
+        <form id="attendanceClockForm" class="attendance-clock-form">
+          <div class="form-group clock-field-emp">
+            <label class="form-label" data-i18n="colEmployee">ជ្រើសរើសបុគ្គលិក <span class="req">*</span></label>
             <select id="attClockEmployeeSelect" class="form-select" required>
               <option value="">-- ជ្រើសរើសបុគ្គលិក --</option>
             </select>
           </div>
 
-          <div>
+          <div class="form-group clock-field-datetime">
             <label class="form-label">កាលបរិច្ឆេទ & ម៉ោងជាក់ស្តែង</label>
             <div style="display: flex; gap: 6px;">
               <input type="date" id="attClockDate" class="form-input" style="flex: 1.2;">
@@ -499,17 +499,17 @@
             </div>
           </div>
 
-          <div>
+          <div class="form-group clock-field-notes">
             <label class="form-label">កំណត់ចំណាំ (បើមាន)</label>
             <input type="text" id="attClockNotes" class="form-input" placeholder="ឧ. ស្ទះចរាចរណ៍, ជួបភ្ញៀវ...">
           </div>
 
-          <div style="display: flex; gap: 8px;">
-            <button type="button" id="btnActionClockIn" class="btn btn-primary" style="flex: 1; background: #10b981; border-color: #10b981; justify-content: center;">
-              <span>🟢</span> <span data-i18n="btnClockIn">ម៉ោងចូល</span>
+          <div class="clock-actions">
+            <button type="button" id="btnActionClockIn" class="btn clock-btn clock-btn-in">
+              <span>🟢</span> <span data-i18n="btnClockIn">កត់ត្រាម៉ោងចូល</span>
             </button>
-            <button type="button" id="btnActionClockOut" class="btn btn-primary" style="flex: 1; background: #f43f5e; border-color: #f43f5e; justify-content: center;">
-              <span>🔴</span> <span data-i18n="btnClockOut">ម៉ោងចេញ</span>
+            <button type="button" id="btnActionClockOut" class="btn clock-btn clock-btn-out">
+              <span>🔴</span> <span data-i18n="btnClockOut">កត់ត្រាម៉ោងចេញ</span>
             </button>
           </div>
         </form>
