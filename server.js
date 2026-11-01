@@ -2855,6 +2855,8 @@ app.put('/api/sales/:id', (req, res) => {
       quantity,
       cost_price,
       selling_price,
+      discount_type,
+      discount_val,
       seller_name,
       seller_id,
       customer_name,
@@ -2869,9 +2871,21 @@ app.put('/api/sales/:id', (req, res) => {
     const qty = quantity !== undefined ? parseFloat(quantity) : existing.quantity;
     const cost = cost_price !== undefined ? parseFloat(cost_price) : existing.cost_price;
     const sell = selling_price !== undefined ? parseFloat(selling_price) : existing.selling_price;
+    
+    const dType = discount_type || existing.discount_type || 'fixed';
+    const dVal = discount_val !== undefined ? (parseFloat(discount_val) || 0) : (existing.discount_val || 0);
+    const subtotal = Math.round(qty * sell * 100) / 100;
+    let discAmount = 0;
+    if (dType === 'percentage') {
+      discAmount = Math.round(subtotal * (dVal / 100) * 100) / 100;
+    } else {
+      discAmount = Math.min(subtotal, dVal);
+    }
+    discAmount = Math.round(discAmount * 100) / 100;
+    const afterDiscount = Math.max(0, subtotal - discAmount);
     const total_cost = Math.round(qty * cost * 100) / 100;
-    const total_amount = Math.round(qty * sell * 100) / 100;
-    const profit = Math.round((total_amount - total_cost) * 100) / 100;
+    const total_amount = afterDiscount;
+    const profit = Math.round((afterDiscount - total_cost) * 100) / 100;
 
     const updateStmt = db.prepare(`
       UPDATE sales SET
@@ -2880,6 +2894,10 @@ app.put('/api/sales/:id', (req, res) => {
         quantity = ?,
         cost_price = ?,
         selling_price = ?,
+        subtotal = ?,
+        discount_type = ?,
+        discount_val = ?,
+        discount_amount = ?,
         total_cost = ?,
         total_amount = ?,
         profit = ?,
@@ -2900,6 +2918,10 @@ app.put('/api/sales/:id', (req, res) => {
       qty,
       cost,
       sell,
+      subtotal,
+      dType,
+      dVal,
+      discAmount,
       total_cost,
       total_amount,
       profit,
