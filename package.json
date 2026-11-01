@@ -8,19 +8,12 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "desktop": "electron main.js",
-    "app": "electron main.js",
-    "pack": "electron-packager . \"MRC-KH\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true --ignore=\"^/dist$\""
+    "dev": "node server.js"
   },
   "dependencies": {
     "better-sqlite3": "^9.6.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "sqlite3": "^6.0.1"
-  },
-  "devDependencies": {
-    "electron": "^45.0.0",
-    "electron-packager": "^17.1.2"
   }
 }
