@@ -512,10 +512,34 @@
     prodStockQty: document.getElementById('prodStockQty'),
     prodLowStockThreshold: document.getElementById('prodLowStockThreshold'),
     prodUnit: document.getElementById('prodUnit'),
+    prodCondition: document.getElementById('prodCondition'),
+    prodSerialNumber: document.getElementById('prodSerialNumber'),
+    prodWarranty: document.getElementById('prodWarranty'),
     prodNotes: document.getElementById('prodNotes'),
     btnCloseProductModal: document.getElementById('btnCloseProductModal'),
     btnCancelProductModal: document.getElementById('btnCancelProductModal'),
     btnSaveProduct: document.getElementById('btnSaveProduct'),
+
+    // Camera Scanner & Z-Report & Telegram
+    btnPosOpenScanner: document.getElementById('btnPosOpenScanner'),
+    scannerModal: document.getElementById('scannerModal'),
+    scannerVideo: document.getElementById('scannerVideo'),
+    scannerStatusText: document.getElementById('scannerStatusText'),
+    btnToggleCameraTorch: document.getElementById('btnToggleCameraTorch'),
+    btnSwitchCamera: document.getElementById('btnSwitchCamera'),
+    btnCloseScannerModal: document.getElementById('btnCloseScannerModal'),
+    btnStopScannerModal: document.getElementById('btnStopScannerModal'),
+    btnOpenZReportModal: document.getElementById('btnOpenZReportModal'),
+    zReportModal: document.getElementById('zReportModal'),
+    zReportDate: document.getElementById('zReportDate'),
+    btnFetchZReport: document.getElementById('btnFetchZReport'),
+    btnPrintZReportDirect: document.getElementById('btnPrintZReportDirect'),
+    zReportContent: document.getElementById('zReportContent'),
+    settingsTelegramForm: document.getElementById('settingsTelegramForm'),
+    setTelegramBotTokenInput: document.getElementById('setTelegramBotTokenInput'),
+    setTelegramChatIdInput: document.getElementById('setTelegramChatIdInput'),
+    btnTestTelegram: document.getElementById('btnTestTelegram'),
+    btnDownloadSqliteDb: document.getElementById('btnDownloadSqliteDb'),
 
     // Restock Modal
     restockModal: document.getElementById('restockModal'),
@@ -2582,6 +2606,21 @@
     if (DOM.settingsStoreForm) DOM.settingsStoreForm.onsubmit = saveStoreProfile;
     if (DOM.settingsFinanceForm) DOM.settingsFinanceForm.onsubmit = saveFinanceSettings;
     if (DOM.btnExportFullBackupJson) DOM.btnExportFullBackupJson.onclick = exportFullBackupJson;
+    if (DOM.settingsTelegramForm) DOM.settingsTelegramForm.onsubmit = saveTelegramSettings;
+    if (DOM.btnTestTelegram) DOM.btnTestTelegram.onclick = testTelegramNotification;
+    if (DOM.btnDownloadSqliteDb) DOM.btnDownloadSqliteDb.onclick = () => { window.location.href = '/api/backup/database'; };
+
+    // Z-Report Event Listeners
+    if (DOM.btnOpenZReportModal) DOM.btnOpenZReportModal.onclick = openZReportModal;
+    if (DOM.btnFetchZReport) DOM.btnFetchZReport.onclick = refreshZReport;
+    if (DOM.btnPrintZReportDirect) DOM.btnPrintZReportDirect.onclick = printZReportSlip;
+
+    // Camera Barcode Scanner Event Listeners
+    if (DOM.btnPosOpenScanner) DOM.btnPosOpenScanner.onclick = startCameraScanner;
+    if (DOM.btnCloseScannerModal) DOM.btnCloseScannerModal.onclick = stopCameraScanner;
+    if (DOM.btnStopScannerModal) DOM.btnStopScannerModal.onclick = stopCameraScanner;
+    if (DOM.btnSwitchCamera) DOM.btnSwitchCamera.onclick = switchCamera;
+    if (DOM.btnToggleCameraTorch) DOM.btnToggleCameraTorch.onclick = toggleCameraTorch;
 
     // Sale Form Submit
     if (DOM.saleForm) {
@@ -3225,7 +3264,9 @@
       list = list.filter(p => 
         (p.name && p.name.toLowerCase().includes(q)) ||
         (p.code && p.code.toLowerCase().includes(q)) ||
-        (p.category && p.category.toLowerCase().includes(q))
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.serial_number && p.serial_number.toLowerCase().includes(q)) ||
+        (p.condition && p.condition.toLowerCase().includes(q))
       );
     }
 
@@ -3252,15 +3293,27 @@
         stockText = `⚠️ នៅសល់ ${p.stock_qty} ${p.unit || 'pcs'}`;
       }
 
+      const isNew = !p.condition || p.condition.includes('ថ្មី');
+      const conditionBadge = p.condition ? `<span class="condition-badge ${isNew ? 'condition-badge-new' : 'condition-badge-used'}">${escapeHtml(p.condition)}</span>` : '';
+      const warrantyText = p.warranty_period ? `<span style="font-size: 0.72rem; color: #10b981; margin-left: 4px;">🛡️ ${escapeHtml(p.warranty_period)}</span>` : '';
+      const serialText = p.serial_number ? `<span style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">S/N: ${escapeHtml(p.serial_number)}</span>` : '';
+
       return `
         <div class="pos-product-card ${isOut ? 'out-of-stock' : ''}" onclick="KhmerHR.addToCart(${p.id})">
           <div>
             <div class="pos-card-top">
               <span class="pos-card-code">${escapeHtml(p.code)}</span>
-              <span class="pos-card-stock-tag ${stockClass}">${stockText}</span>
+              <div style="display:flex; gap:4px; align-items:center;">
+                ${conditionBadge}
+                <span class="pos-card-stock-tag ${stockClass}">${stockText}</span>
+              </div>
             </div>
             <h4 class="pos-card-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</h4>
-            <div class="pos-card-category">${escapeHtml(p.category)}</div>
+            <div class="pos-card-category" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>${escapeHtml(p.category)}</span>
+              ${warrantyText}
+            </div>
+            ${serialText ? `<div style="margin-top:2px;">${serialText}</div>` : ''}
           </div>
           <div class="pos-card-footer">
             <span class="pos-card-price">$${(parseFloat(p.selling_price) || 0).toFixed(2)}</span>
@@ -3301,7 +3354,10 @@
         cost_price: parseFloat(prod.cost_price) || 0,
         selling_price: parseFloat(prod.selling_price) || 0,
         quantity: 1,
-        stock_qty: prod.stock_qty
+        stock_qty: prod.stock_qty,
+        condition: prod.condition || 'ថ្មី 100%',
+        serial_number: prod.serial_number || '',
+        warranty_period: prod.warranty_period || ''
       });
     }
 
@@ -3390,11 +3446,22 @@
     } else {
       DOM.posCartItemsList.innerHTML = state.cart.map(item => {
         const itemTotal = item.quantity * item.selling_price;
+        const isNew = !item.condition || item.condition.includes('ថ្មី');
+        const condBadge = item.condition ? `<span class="condition-badge ${isNew ? 'condition-badge-new' : 'condition-badge-used'}" style="font-size: 0.68rem; margin-left: 4px;">${escapeHtml(item.condition)}</span>` : '';
+        const metaDetail = [
+          `$${item.selling_price.toFixed(2)} / ${item.unit}`,
+          item.warranty_period ? `🛡️ ${escapeHtml(item.warranty_period)}` : '',
+          item.serial_number ? `S/N: ${escapeHtml(item.serial_number)}` : ''
+        ].filter(Boolean).join(' · ');
+
         return `
           <div class="pos-cart-row">
             <div class="pos-cart-item-info">
-              <div class="pos-cart-item-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
-              <div class="pos-cart-item-meta">$${item.selling_price.toFixed(2)} / ${item.unit}</div>
+              <div class="pos-cart-item-name" title="${escapeHtml(item.name)}">
+                ${escapeHtml(item.name)}
+                ${condBadge}
+              </div>
+              <div class="pos-cart-item-meta" style="font-size: 0.73rem;">${metaDetail}</div>
             </div>
             <div class="pos-cart-stepper">
               <button type="button" class="pos-stepper-btn" onclick="KhmerHR.updateCartQty(${item.product_id}, -1)">-</button>
@@ -3464,7 +3531,11 @@
         category: i.category,
         quantity: i.quantity,
         cost_price: i.cost_price,
-        selling_price: i.selling_price
+        selling_price: i.selling_price,
+        condition: i.condition,
+        item_condition: i.condition,
+        serial_number: i.serial_number,
+        warranty_period: i.warranty_period
       })),
       discount_type: state.discountType,
       discount_val: state.discountVal,
@@ -3529,7 +3600,9 @@
       list = list.filter(p => 
         (p.name && p.name.toLowerCase().includes(q)) ||
         (p.code && p.code.toLowerCase().includes(q)) ||
-        (p.category && p.category.toLowerCase().includes(q))
+        (p.category && p.category.toLowerCase().includes(q)) ||
+        (p.serial_number && p.serial_number.toLowerCase().includes(q)) ||
+        (p.condition && p.condition.toLowerCase().includes(q))
       );
     }
 
@@ -3556,6 +3629,8 @@
       const profit = sell - cost;
       const margin = sell > 0 ? ((profit / sell) * 100).toFixed(1) : '0';
       const profitClass = margin >= 20 ? 'positive' : (margin >= 0 ? 'accent' : 'negative');
+      const isNew = !p.condition || p.condition.includes('ថ្មី');
+      const conditionBadge = p.condition ? `<span class="condition-badge ${isNew ? 'condition-badge-new' : 'condition-badge-used'}" style="margin-left: 6px;">${escapeHtml(p.condition)}</span>` : '';
 
       return `
         <tr>
@@ -3565,10 +3640,17 @@
             </span>
           </td>
           <td>
-            <div style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;">${escapeHtml(p.name)}</div>
-            <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-size: 0.72rem; margin-top: 3px;">
-              ${escapeHtml(p.category)}
-            </span>
+            <div style="font-weight: 700; color: var(--text-main); font-size: 0.92rem;">
+              ${escapeHtml(p.name)}
+              ${conditionBadge}
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top: 3px;">
+              <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); font-size: 0.72rem;">
+                ${escapeHtml(p.category)}
+              </span>
+              ${p.serial_number ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">S/N: ${escapeHtml(p.serial_number)}</span>` : ''}
+              ${p.warranty_period ? `<span style="font-size: 0.72rem; color: #10b981;">🛡️ ធានា: ${escapeHtml(p.warranty_period)}</span>` : ''}
+            </div>
           </td>
           <td style="text-align: right; color: var(--text-subtle);">$${cost.toFixed(2)}</td>
           <td style="text-align: right; font-weight: 700; color: var(--text-main);">$${sell.toFixed(2)}</td>
@@ -3616,12 +3698,18 @@
       DOM.prodStockQty.value = product.stock_qty || 0;
       DOM.prodLowStockThreshold.value = product.low_stock_threshold || 5;
       DOM.prodUnit.value = product.unit || 'pcs';
+      if (DOM.prodCondition) DOM.prodCondition.value = product.condition || 'ថ្មី 100%';
+      if (DOM.prodSerialNumber) DOM.prodSerialNumber.value = product.serial_number || '';
+      if (DOM.prodWarranty) DOM.prodWarranty.value = product.warranty_period || '';
       DOM.prodNotes.value = product.notes || '';
     } else {
       DOM.productModalTitle.textContent = window.i18n.t('modalAddProductTitle');
       DOM.prodStockQty.value = 10;
       DOM.prodLowStockThreshold.value = 5;
       DOM.prodUnit.value = 'pcs';
+      if (DOM.prodCondition) DOM.prodCondition.value = 'ថ្មី 100%';
+      if (DOM.prodSerialNumber) DOM.prodSerialNumber.value = '';
+      if (DOM.prodWarranty) DOM.prodWarranty.value = '';
     }
 
     openModal(DOM.productModal);
@@ -3642,6 +3730,9 @@
       stock_qty: parseFloat(DOM.prodStockQty.value) || 0,
       low_stock_threshold: parseInt(DOM.prodLowStockThreshold.value, 10) || 5,
       unit: DOM.prodUnit.value.trim() || 'pcs',
+      condition: DOM.prodCondition ? DOM.prodCondition.value : (document.getElementById('prodCondition')?.value || 'ថ្មី 100%'),
+      serial_number: DOM.prodSerialNumber ? DOM.prodSerialNumber.value.trim() : (document.getElementById('prodSerialNumber')?.value.trim() || ''),
+      warranty_period: DOM.prodWarranty ? DOM.prodWarranty.value.trim() : (document.getElementById('prodWarranty')?.value.trim() || ''),
       notes: DOM.prodNotes.value.trim()
     };
 
@@ -3986,21 +4077,37 @@
 
     if (DOM.rcptItemDetails) {
       if (hasItems) {
-        DOM.rcptItemDetails.innerHTML = sale.items.map(i => `
-          <div class="receipt-item-entry" style="margin-bottom: 4px;">
-            <span style="flex: 2; font-weight: 600;">${escapeHtml(i.product_name)}</span>
-            <span style="flex: 0.8; text-align: center;">${i.quantity}</span>
-            <span style="flex: 1.2; text-align: right;">$${(parseFloat(i.selling_price) || 0).toFixed(2)}</span>
-            <span style="flex: 1.2; text-align: right; font-weight: 700;">$${(parseFloat(i.total_amount) || 0).toFixed(2)}</span>
+        DOM.rcptItemDetails.innerHTML = sale.items.map(i => {
+          const itemCond = i.item_condition || i.condition || '';
+          const sn = i.serial_number ? ` [S/N: ${i.serial_number}]` : '';
+          const w = i.warranty_period ? ` [ធានា: ${i.warranty_period}]` : '';
+          const meta = (itemCond || sn || w) ? `<div style="font-size:0.75rem; color:#4b5563; padding-left:2px;">${itemCond ? '• ' + escapeHtml(itemCond) : ''}${escapeHtml(sn)}${escapeHtml(w)}</div>` : '';
+          return `
+          <div class="receipt-item-entry" style="margin-bottom: 4px; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; width:100%;">
+              <span style="flex: 2; font-weight: 600;">${escapeHtml(i.product_name)}</span>
+              <span style="flex: 0.8; text-align: center;">${i.quantity}</span>
+              <span style="flex: 1.2; text-align: right;">$${(parseFloat(i.selling_price) || 0).toFixed(2)}</span>
+              <span style="flex: 1.2; text-align: right; font-weight: 700;">$${(parseFloat(i.total_amount) || 0).toFixed(2)}</span>
+            </div>
+            ${meta}
           </div>
-        `).join('');
+        `;
+        }).join('');
       } else {
+        const itemCond = sale.item_condition || sale.condition || '';
+        const sn = sale.serial_number ? ` [S/N: ${sale.serial_number}]` : '';
+        const w = sale.warranty_period ? ` [ធានា: ${sale.warranty_period}]` : '';
+        const meta = (itemCond || sn || w) ? `<div style="font-size:0.75rem; color:#4b5563; padding-left:2px;">${itemCond ? '• ' + escapeHtml(itemCond) : ''}${escapeHtml(sn)}${escapeHtml(w)}</div>` : '';
         DOM.rcptItemDetails.innerHTML = `
-          <div class="receipt-item-entry">
-            <span style="flex: 2; font-weight: 600;">${escapeHtml(sale.product_name)}</span>
-            <span style="flex: 0.8; text-align: center;">${qty}</span>
-            <span style="flex: 1.2; text-align: right;">$${sellPrice.toFixed(2)}</span>
-            <span style="flex: 1.2; text-align: right; font-weight: 700;">$${totalAmount.toFixed(2)}</span>
+          <div class="receipt-item-entry" style="display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; width:100%;">
+              <span style="flex: 2; font-weight: 600;">${escapeHtml(sale.product_name)}</span>
+              <span style="flex: 0.8; text-align: center;">${qty}</span>
+              <span style="flex: 1.2; text-align: right;">$${sellPrice.toFixed(2)}</span>
+              <span style="flex: 1.2; text-align: right; font-weight: 700;">$${totalAmount.toFixed(2)}</span>
+            </div>
+            ${meta}
           </div>
         `;
       }
@@ -4049,24 +4156,36 @@
 
     if (DOM.stdItemsTableBody) {
       if (hasItems) {
-        DOM.stdItemsTableBody.innerHTML = sale.items.map((i, idx) => `
+        DOM.stdItemsTableBody.innerHTML = sale.items.map((i, idx) => {
+          const itemCond = i.item_condition || i.condition || '';
+          const sn = i.serial_number ? ` [S/N: ${i.serial_number}]` : '';
+          const w = i.warranty_period ? ` [ធានា: ${i.warranty_period}]` : '';
+          const meta = (itemCond || sn || w) ? `<div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">${itemCond ? '<span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:3px; margin-right:4px;">' + escapeHtml(itemCond) + '</span>' : ''}${escapeHtml(sn)}${escapeHtml(w)}</div>` : '';
+          return `
           <tr>
             <td style="text-align: center; color: #64748b;">${idx + 1}</td>
             <td>
               <strong style="color: #0f172a;">${escapeHtml(i.product_name)}</strong>
+              ${meta}
             </td>
             <td style="color: #64748b;">${escapeHtml(i.category || '-')}</td>
             <td style="text-align: center; font-weight: 600;">${i.quantity}</td>
             <td style="text-align: right;">$${(parseFloat(i.selling_price) || 0).toFixed(2)}</td>
             <td style="text-align: right; font-weight: 700; color: #0f172a;">$${(parseFloat(i.total_amount) || 0).toFixed(2)}</td>
           </tr>
-        `).join('');
+        `;
+        }).join('');
       } else {
+        const itemCond = sale.item_condition || sale.condition || '';
+        const sn = sale.serial_number ? ` [S/N: ${sale.serial_number}]` : '';
+        const w = sale.warranty_period ? ` [ធានា: ${sale.warranty_period}]` : '';
+        const meta = (itemCond || sn || w) ? `<div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">${itemCond ? '<span style="background:#e0f2fe; color:#0369a1; padding:1px 5px; border-radius:3px; margin-right:4px;">' + escapeHtml(itemCond) + '</span>' : ''}${escapeHtml(sn)}${escapeHtml(w)}</div>` : '';
         DOM.stdItemsTableBody.innerHTML = `
           <tr>
             <td style="text-align: center; color: #64748b;">1</td>
             <td>
               <strong style="color: #0f172a;">${escapeHtml(sale.product_name)}</strong>
+              ${meta}
               ${sale.notes ? `<div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">${escapeHtml(sale.notes)}</div>` : ''}
             </td>
             <td style="color: #64748b;">${escapeHtml(sale.category)}</td>
@@ -5608,6 +5727,9 @@
     if (DOM.setTaxRateInput) DOM.setTaxRateInput.value = s.tax_rate !== undefined ? s.tax_rate : 10;
     if (DOM.setBakongNameInput) DOM.setBakongNameInput.value = s.bakong_name || '';
     if (DOM.setBakongIdInput) DOM.setBakongIdInput.value = s.bakong_id || '';
+
+    if (DOM.setTelegramBotTokenInput) DOM.setTelegramBotTokenInput.value = s.telegram_bot_token || '';
+    if (DOM.setTelegramChatIdInput) DOM.setTelegramChatIdInput.value = s.telegram_chat_id || '';
   }
 
   async function saveStoreProfile(e) {
@@ -5681,6 +5803,415 @@
       }
     } catch (err) {
       showToast('Error exporting backup', 'error');
+    }
+  }
+
+  // ---------------- Telegram Bot Settings & Testing ----------------
+
+  async function saveTelegramSettings(e) {
+    if (e) e.preventDefault();
+    try {
+      const botToken = DOM.setTelegramBotTokenInput ? DOM.setTelegramBotTokenInput.value.trim() : '';
+      const chatId = DOM.setTelegramChatIdInput ? DOM.setTelegramChatIdInput.value.trim() : '';
+      const payload = {
+        telegram_bot_token: botToken,
+        telegram_chat_id: chatId
+      };
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (result.success) {
+        state.settings = { ...state.settings, ...payload };
+        showToast('បានរក្សាទុកការកំណត់ Telegram Bot ដោយជោគជ័យ!', 'success');
+      } else {
+        showToast(result.message || 'Error saving Telegram settings', 'error');
+      }
+    } catch (err) {
+      showToast('Error saving Telegram settings', 'error');
+    }
+  }
+
+  async function testTelegramNotification() {
+    try {
+      const botToken = DOM.setTelegramBotTokenInput ? DOM.setTelegramBotTokenInput.value.trim() : '';
+      const chatId = DOM.setTelegramChatIdInput ? DOM.setTelegramChatIdInput.value.trim() : '';
+      if (!botToken || !chatId) {
+        showToast('សូមបញ្ចូលទាំង Bot Token និង Chat ID មុននឹងធ្វើតេស្ត!', 'warning');
+        return;
+      }
+      showToast('កំពុងផ្ញើសារសាកល្បងទៅកាន់ Telegram...', 'info');
+      const res = await fetch('/api/telegram/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: botToken, chat_id: chatId })
+      });
+      const result = await res.json();
+      if (result.success) {
+        showToast('🎉 សារសាកល្បងត្រូវបានផ្ញើទៅកាន់ Telegram ដោយជោគជ័យ!', 'success');
+      } else {
+        showToast('❌ បរាជ័យក្នុងការផ្ញើ: ' + (result.message || 'សូមពិនិត្យ Token និង Chat ID'), 'error');
+      }
+    } catch (err) {
+      showToast('❌ បរាជ័យក្នុងការតភ្ជាប់ Telegram: ' + err.message, 'error');
+    }
+  }
+
+  // ---------------- Z-Report (Daily Register Closing) ----------------
+
+  let currentZReportData = null;
+
+  async function openZReportModal() {
+    const today = new Date().toISOString().slice(0, 10);
+    if (DOM.zReportDate) DOM.zReportDate.value = today;
+    openModal(DOM.zReportModal);
+    await loadZReportData(today);
+  }
+
+  async function refreshZReport() {
+    const date = DOM.zReportDate ? DOM.zReportDate.value : new Date().toISOString().slice(0, 10);
+    await loadZReportData(date);
+  }
+
+  async function loadZReportData(date) {
+    if (!DOM.zReportContent) return;
+    DOM.zReportContent.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px;">កំពុងទាញយករបាយការណ៍បិទបញ្ជី...</div>`;
+    try {
+      const res = await fetch(`/api/reports/z-report?date=${date}`);
+      const result = await res.json();
+      if (result.success && result.data) {
+        currentZReportData = result.data;
+        renderZReportUI(result.data);
+      } else {
+        DOM.zReportContent.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">មិនអាចទាញយកទិន្នន័យបានទេ</div>`;
+      }
+    } catch (err) {
+      console.error('Error fetching Z-report:', err);
+      DOM.zReportContent.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">កំហុសក្នុងការទាញយកទិន្នន័យ</div>`;
+    }
+  }
+
+  function renderZReportUI(data) {
+    const s = data.summary || {};
+    const topProds = data.top_products || [];
+    const revenueUSD = (parseFloat(s.total_revenue) || 0).toFixed(2);
+    const profitUSD = (parseFloat(s.total_profit) || 0).toFixed(2);
+    const costUSD = (parseFloat(s.total_cost) || 0).toFixed(2);
+    const khrTotal = Math.round((parseFloat(s.total_revenue) || 0) * 4100).toLocaleString();
+
+    DOM.zReportContent.innerHTML = `
+      <div style="border-bottom: 2px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 14px; text-align: center;">
+        <h3 style="margin: 0 0 4px 0; font-size: 1.15rem; color: var(--text-main);">ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក</h3>
+        <div style="font-size: 0.85rem; color: var(--text-muted);">របាយការណ៍បិទបញ្ជីប្រចាំថ្ងៃ (DAILY Z-REPORT)</div>
+        <div style="font-size: 0.82rem; color: #10b981; font-weight: 600; margin-top: 2px;">កាលបរិច្ឆេទ: ${data.date}</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px;">
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ចំណូលសរុប (Gross Sales)</div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: #10b981;">$${revenueUSD}</div>
+          <div style="font-size: 0.72rem; color: #10b981;">${khrTotal} ៛</div>
+        </div>
+        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ចំនួនវិក្កយបត្រ (Tx Count)</div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: #818cf8;">${s.total_sales || 0}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">វិក្កយបត្រជោគជ័យ</div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">ចំណេញសុទ្ធ (Net Profit)</div>
+          <div style="font-size: 1.15rem; font-weight: 800; color: #f59e0b;">$${profitUSD}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">ថ្លៃដើម: $${costUSD}</div>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-surface-secondary); border-radius: 8px; padding: 12px; margin-bottom: 14px; border: 1px solid var(--border-color);">
+        <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; color: var(--text-main);">💳 បែងចែកតាមវិធីទូទាត់ (Payment Breakdown)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem;">
+          <div style="display:flex; justify-content:space-between; padding: 4px 6px; border-bottom: 1px solid var(--border-color);">
+            <span>💵 ប្រាក់សុទ្ធ (Cash):</span>
+            <strong>$${(parseFloat(s.cash_revenue) || 0).toFixed(2)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding: 4px 6px; border-bottom: 1px solid var(--border-color);">
+            <span>📱 ABA KHQR:</span>
+            <strong>$${(parseFloat(s.khqr_revenue) || 0).toFixed(2)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding: 4px 6px; border-bottom: 1px solid var(--border-color);">
+            <span>🏦 ACLEDA KHQR:</span>
+            <strong>$${(parseFloat(s.acleda_revenue) || 0).toFixed(2)}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding: 4px 6px; border-bottom: 1px solid var(--border-color);">
+            <span>🪪 ផ្សេងៗ / Card / Wing:</span>
+            <strong>$${((parseFloat(s.wing_revenue) || 0) + (parseFloat(s.card_revenue) || 0)).toFixed(2)}</strong>
+          </div>
+        </div>
+      </div>
+
+      ${topProds.length > 0 ? `
+        <div style="background: var(--bg-surface-secondary); border-radius: 8px; padding: 12px; border: 1px solid var(--border-color);">
+          <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 8px; color: var(--text-main);">🏆 មុខទំនិញលក់ដាច់ប្រចាំថ្ងៃ (Items Sold)</div>
+          <div style="max-height: 160px; overflow-y: auto;">
+            <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left;">
+                  <th style="padding: 4px;">ទំនិញ</th>
+                  <th style="padding: 4px; text-align: center;">ចំនួន</th>
+                  <th style="padding: 4px; text-align: right;">សរុប</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${topProds.map(p => `
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 4px;">${escapeHtml(p.product_name)}</td>
+                    <td style="padding: 4px; text-align: center; font-weight: 600;">${p.total_qty}</td>
+                    <td style="padding: 4px; text-align: right; font-weight: 700;">$${(parseFloat(p.total_sales) || 0).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ` : '<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 10px;">មិនមានការលក់សម្រាប់កាលបរិច្ឆេទនេះទេ</div>'}
+    `;
+  }
+
+  function printZReportSlip() {
+    if (!currentZReportData) {
+      showToast('មិនមានទិន្នន័យ Z-Report សម្រាប់បោះពុម្ពទេ', 'warning');
+      return;
+    }
+    const s = currentZReportData.summary || {};
+    const topProds = currentZReportData.top_products || [];
+    const revenueUSD = (parseFloat(s.total_revenue) || 0).toFixed(2);
+    const profitUSD = (parseFloat(s.total_profit) || 0).toFixed(2);
+    const khrTotal = Math.round((parseFloat(s.total_revenue) || 0) * 4100).toLocaleString();
+    const printTime = new Date().toLocaleString();
+
+    const slipHtml = `
+      <div style="width: 290px; font-family: 'Courier New', monospace; font-size: 12px; color: #000; line-height: 1.4; margin: 0 auto; padding: 10px 0;">
+        <div style="text-align: center; margin-bottom: 8px;">
+          <div style="font-size: 15px; font-weight: bold;">ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក</div>
+          <div style="font-size: 12px; font-weight: bold; margin: 2px 0;">DAILY Z-REPORT (បិទបញ្ជី)</div>
+          <div style="font-size: 11px;">កាលបរិច្ឆេទ: ${currentZReportData.date}</div>
+          <div style="font-size: 10px; color: #555;">ព្រីននៅ: ${printTime}</div>
+        </div>
+        <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>ចំនួនវិក្កយបត្រ (Tx Count):</span>
+          <strong>${s.total_sales || 0}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; margin: 4px 0;">
+          <span>ចំណូលសរុប (GROSS):</span>
+          <span>$${revenueUSD}</span>
+        </div>
+        <div style="text-align: right; font-size: 11px; margin-bottom: 4px;">(${khrTotal} KHR)</div>
+        <div style="display: flex; justify-content: space-between;">
+          <span>ចំណេញសុទ្ធ (PROFIT):</span>
+          <span>+$${profitUSD}</span>
+        </div>
+        <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+        <div style="font-weight: bold; margin-bottom: 4px;">បែងចែកតាមការទូទាត់ (PAYMENTS):</div>
+        <div style="display: flex; justify-content: space-between;"><span>• សាច់ប្រាក់ (Cash):</span><span>$${(parseFloat(s.cash_revenue) || 0).toFixed(2)}</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>• ABA KHQR:</span><span>$${(parseFloat(s.khqr_revenue) || 0).toFixed(2)}</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>• ACLEDA KHQR:</span><span>$${(parseFloat(s.acleda_revenue) || 0).toFixed(2)}</span></div>
+        <div style="display: flex; justify-content: space-between;"><span>• ផ្សេងៗ / Card:</span><span>$${((parseFloat(s.wing_revenue) || 0) + (parseFloat(s.card_revenue) || 0)).toFixed(2)}</span></div>
+        
+        ${topProds.length > 0 ? `
+          <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+          <div style="font-weight: bold; margin-bottom: 4px;">ទំនិញលក់បាន (ITEMS):</div>
+          ${topProds.map(p => `
+            <div style="display: flex; justify-content: space-between; font-size: 11px;">
+              <span style="flex: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.product_name)}</span>
+              <span style="flex: 0.6; text-align: center;">x${p.total_qty}</span>
+              <span style="flex: 1; text-align: right;">$${(parseFloat(p.total_sales) || 0).toFixed(2)}</span>
+            </div>
+          `).join('')}
+        ` : ''}
+
+        <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 25px; text-align: center; font-size: 10px;">
+          <div>------------------<br>អ្នកបិទបញ្ជី / Cashier</div>
+          <div>------------------<br>ម្ចាស់ហាង / Manager</div>
+        </div>
+      </div>
+    `;
+
+    printHtmlContent(slipHtml, `Z_Report_${currentZReportData.date}`);
+  }
+
+  // ---------------- Camera Barcode & QR Scanner ----------------
+
+  let scannerStream = null;
+  let scannerInterval = null;
+  let scannerFacingMode = 'environment';
+  let scannerTorchState = false;
+  let isScanningActive = false;
+
+  function playScanBeep() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1046.5, ctx.currentTime);
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } catch (e) {
+      // Audio policy
+    }
+  }
+
+  async function startCameraScanner() {
+    openModal(DOM.scannerModal);
+    if (DOM.scannerStatusText) DOM.scannerStatusText.textContent = 'កំពុងបើកកាមេរ៉ា...';
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (DOM.scannerStatusText) DOM.scannerStatusText.textContent = 'ឧបករណ៍ ឬកម្មវិធីរុករករបស់អ្នកមិនគាំទ្រ Camera API ទេ';
+      showToast('ឧបករណ៍នេះមិនគាំទ្រ Camera API ទេ', 'error');
+      return;
+    }
+
+    try {
+      if (scannerStream) {
+        scannerStream.getTracks().forEach(t => t.stop());
+      }
+      scannerStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: scannerFacingMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+
+      if (DOM.scannerVideo) {
+        DOM.scannerVideo.srcObject = scannerStream;
+        await DOM.scannerVideo.play();
+      }
+
+      // Check torch capability
+      const track = scannerStream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+      if (DOM.btnToggleCameraTorch) {
+        DOM.btnToggleCameraTorch.style.display = capabilities.torch ? 'inline-flex' : 'none';
+      }
+
+      if (DOM.scannerStatusText) DOM.scannerStatusText.textContent = 'តម្រង់បាកូដ ឬ QR ទៅកាន់ប្រអប់កណ្តាល';
+      startScanLoop();
+    } catch (err) {
+      console.error('Camera access error:', err);
+      if (DOM.scannerStatusText) DOM.scannerStatusText.textContent = 'មិនអាចបើកកាមេរ៉ាបានទេ: ' + err.message;
+      showToast('មិនអាចបើកកាមេរ៉ាបានទេ: ' + err.message, 'error');
+    }
+  }
+
+  function stopCameraScanner() {
+    isScanningActive = false;
+    if (scannerInterval) {
+      clearInterval(scannerInterval);
+      scannerInterval = null;
+    }
+    if (scannerStream) {
+      scannerStream.getTracks().forEach(t => t.stop());
+      scannerStream = null;
+    }
+    if (DOM.scannerVideo) {
+      DOM.scannerVideo.srcObject = null;
+    }
+    closeModal(DOM.scannerModal);
+  }
+
+  async function switchCamera() {
+    scannerFacingMode = scannerFacingMode === 'environment' ? 'user' : 'environment';
+    await startCameraScanner();
+  }
+
+  async function toggleCameraTorch() {
+    if (!scannerStream) return;
+    const track = scannerStream.getVideoTracks()[0];
+    if (track && track.applyConstraints) {
+      try {
+        scannerTorchState = !scannerTorchState;
+        await track.applyConstraints({
+          advanced: [{ torch: scannerTorchState }]
+        });
+      } catch (e) {
+        console.warn('Torch not supported:', e);
+      }
+    }
+  }
+
+  function startScanLoop() {
+    isScanningActive = true;
+    let detector = null;
+    if ('BarcodeDetector' in window) {
+      try {
+        detector = new BarcodeDetector({
+          formats: ['code_128', 'ean_13', 'ean_8', 'qr_code', 'upc_a', 'upc_e', 'code_39']
+        });
+      } catch (e) {
+        detector = null;
+      }
+    }
+
+    let isProcessing = false;
+    let lastScanTime = 0;
+
+    scannerInterval = setInterval(async () => {
+      if (!isScanningActive || isProcessing || !DOM.scannerVideo) return;
+      if (DOM.scannerVideo.readyState < 2) return;
+
+      const now = Date.now();
+      if (now - lastScanTime < 1600) return;
+
+      if (detector) {
+        try {
+          isProcessing = true;
+          const barcodes = await detector.detect(DOM.scannerVideo);
+          if (barcodes && barcodes.length > 0) {
+            const rawVal = barcodes[0].rawValue ? barcodes[0].rawValue.trim() : '';
+            if (rawVal) {
+              lastScanTime = Date.now();
+              handleScannedCode(rawVal);
+            }
+          }
+        } catch (e) {
+          // ignore frame detection error
+        } finally {
+          isProcessing = false;
+        }
+      }
+    }, 200);
+  }
+
+  function handleScannedCode(code) {
+    playScanBeep();
+    if (DOM.scannerStatusText) DOM.scannerStatusText.textContent = `បានស្កេន: ${code}`;
+
+    const q = code.toLowerCase();
+    const product = state.products.find(p => 
+      (p.code && p.code.toLowerCase() === q) ||
+      (p.serial_number && p.serial_number.toLowerCase() === q)
+    );
+
+    if (product) {
+      addToCart(product.id);
+      showToast(`✅ បានបញ្ចូលក្នុងកន្រ្តក: ${product.name}`, 'success');
+      if (DOM.scannerStatusText) {
+        DOM.scannerStatusText.innerHTML = `✅ <strong style="color:#10b981;">${escapeHtml(product.name)}</strong> (+$${parseFloat(product.selling_price).toFixed(2)})`;
+      }
+    } else {
+      showToast(`🔍 មិនមានទំនិញលេខកូដ: ${code}`, 'warning');
+      if (DOM.scannerStatusText) {
+        DOM.scannerStatusText.innerHTML = `⚠️ រកមិនឃើញទំនិញលេខកូដ: <code>${escapeHtml(code)}</code>`;
+      }
     }
   }
 
@@ -6266,6 +6797,9 @@
     removeFromCart: (productId) => removeFromCart(productId),
     clearCart: clearCart,
     openRestock: (id) => showRestockModal(id),
+    openZReport: () => openZReportModal(),
+    startScanner: () => startCameraScanner(),
+    stopScanner: () => stopCameraScanner(),
     editProduct: (id) => {
       const p = state.products.find(x => x.id === id);
       if (p) showProductModal(p);

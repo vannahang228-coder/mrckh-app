@@ -280,6 +280,30 @@ for (const col of salesColsToAdd) {
   }
 }
 
+// Migrate products table for Condition, Serial Number / IMEI & Warranty (New & Secondhand Shop)
+const productColsToAdd = [
+  { name: 'condition', type: "TEXT DEFAULT 'ថ្មី 100%'" },
+  { name: 'serial_number', type: "TEXT DEFAULT ''" },
+  { name: 'warranty_period', type: "TEXT DEFAULT 'គ្មានការធានា'" }
+];
+for (const col of productColsToAdd) {
+  try {
+    db.exec(`ALTER TABLE products ADD COLUMN ${col.name} ${col.type};`);
+  } catch (e) {}
+}
+
+// Migrate sale_items table for Condition, Serial Number & Warranty
+const saleItemColsToAdd = [
+  { name: 'item_condition', type: "TEXT DEFAULT ''" },
+  { name: 'serial_number', type: "TEXT DEFAULT ''" },
+  { name: 'warranty_period', type: "TEXT DEFAULT ''" }
+];
+for (const col of saleItemColsToAdd) {
+  try {
+    db.exec(`ALTER TABLE sale_items ADD COLUMN ${col.name} ${col.type};`);
+  } catch (e) {}
+}
+
 // Sample Employees Data
 const sampleEmployees = [
   {
@@ -2217,10 +2241,10 @@ app.get('/api/products/:id', (req, res) => {
   }
 });
 
-// 3. Create new product
+// 3. Create new product (Supports New & Secondhand Condition, Serial/IMEI, Warranty)
 app.post('/api/products', (req, res) => {
   try {
-    const { code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, notes } = req.body;
+    const { code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, notes, condition, serial_number, warranty_period } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Product name is required' });
     }
@@ -2232,8 +2256,8 @@ app.post('/api/products', (req, res) => {
     const lowThreshold = Math.max(0, parseFloat(low_stock_threshold) || 5);
 
     const insertStmt = db.prepare(`
-      INSERT INTO products (code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products (code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, notes, condition, serial_number, warranty_period)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertStmt.run(
@@ -2245,7 +2269,10 @@ app.post('/api/products', (req, res) => {
       stock,
       lowThreshold,
       unit || 'គ្រឿង',
-      notes ? notes.trim() : ''
+      notes ? notes.trim() : '',
+      condition || 'ថ្មី 100%',
+      serial_number ? serial_number.trim() : '',
+      warranty_period || 'គ្មានការធានា'
     );
 
     const newProd = db.prepare('SELECT * FROM products WHERE id = ?').get(result.lastInsertRowid);
@@ -2263,7 +2290,7 @@ app.put('/api/products/:id', (req, res) => {
     const existing = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
     if (!existing) return res.status(404).json({ success: false, message: 'Product not found' });
 
-    const { code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, notes } = req.body;
+    const { code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, notes, condition, serial_number, warranty_period } = req.body;
 
     const prdCode = code ? code.trim().toUpperCase() : existing.code;
     const prdName = name ? name.trim() : existing.name;
@@ -2274,13 +2301,17 @@ app.put('/api/products/:id', (req, res) => {
     const lowThreshold = low_stock_threshold !== undefined ? Math.max(0, parseFloat(low_stock_threshold) || 0) : existing.low_stock_threshold;
     const prdUnit = unit || existing.unit;
     const prdNotes = notes !== undefined ? notes.trim() : existing.notes;
+    const prdCond = condition !== undefined ? condition : (existing.condition || 'ថ្មី 100%');
+    const prdSerial = serial_number !== undefined ? serial_number.trim() : (existing.serial_number || '');
+    const prdWarranty = warranty_period !== undefined ? warranty_period : (existing.warranty_period || 'គ្មានការធានា');
 
     db.prepare(`
       UPDATE products SET
         code = ?, name = ?, category = ?, cost_price = ?, selling_price = ?,
-        stock_qty = ?, low_stock_threshold = ?, unit = ?, notes = ?, updated_at = datetime('now')
+        stock_qty = ?, low_stock_threshold = ?, unit = ?, notes = ?,
+        condition = ?, serial_number = ?, warranty_period = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(prdCode, prdName, cat, cost, sell, stock, lowThreshold, prdUnit, prdNotes, id);
+    `).run(prdCode, prdName, cat, cost, sell, stock, lowThreshold, prdUnit, prdNotes, prdCond, prdSerial, prdWarranty, id);
 
     const updated = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
     res.json({ success: true, data: updated, message: 'Product updated successfully' });
@@ -2752,11 +2783,12 @@ app.post('/api/sales', (req, res) => {
 
     const saleId = result.lastInsertRowid;
 
-    // Insert line items & decrement stock
+    // Insert line items & decrement stock (Supports Condition, Serial/IMEI, Warranty)
     const insertItemStmt = db.prepare(`
       INSERT INTO sale_items (
-        sale_id, product_id, product_name, category, quantity, cost_price, selling_price, total_cost, total_amount, profit
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        sale_id, product_id, product_name, category, quantity, cost_price, selling_price, total_cost, total_amount, profit,
+        item_condition, serial_number, warranty_period
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const deductStockStmt = db.prepare(`
@@ -2774,7 +2806,10 @@ app.post('/api/sales', (req, res) => {
         it.selling_price,
         it.total_cost,
         it.total_amount,
-        it.profit
+        it.profit,
+        it.condition || it.item_condition || '',
+        it.serial_number || '',
+        it.warranty_period || ''
       );
 
       if (it.product_id) {
@@ -2784,6 +2819,11 @@ app.post('/api/sales', (req, res) => {
 
     const newSale = db.prepare('SELECT * FROM sales WHERE id = ?').get(saleId);
     newSale.items = db.prepare('SELECT * FROM sale_items WHERE sale_id = ?').all(saleId);
+
+    // Trigger Instant Telegram Notification in background if configured
+    try {
+      sendTelegramSaleNotification(newSale);
+    } catch (e) {}
 
     res.status(201).json({ success: true, data: newSale, message: 'Sale recorded successfully' });
   } catch (error) {
@@ -3551,6 +3591,217 @@ app.post('/api/clear-all-data', (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// ==========================================================================
+// FEATURE: Telegram Bot Integration & Instant Sale Notifications
+// ==========================================================================
+async function sendTelegramSaleNotification(sale) {
+  try {
+    const tokenRow = db.prepare("SELECT value FROM store_settings WHERE key = 'telegram_bot_token'").get();
+    const chatIdRow = db.prepare("SELECT value FROM store_settings WHERE key = 'telegram_chat_id'").get();
+    const enabledRow = db.prepare("SELECT value FROM store_settings WHERE key = 'telegram_sales_enabled'").get();
+    const token = tokenRow ? tokenRow.value.trim() : '';
+    const chatId = chatIdRow ? chatIdRow.value.trim() : '';
+    const enabled = enabledRow ? enabledRow.value : 'true';
+
+    if (!token || !chatId || enabled === 'false') return;
+
+    const itemsText = (sale.items || []).map(i => {
+      let extra = [];
+      if (i.item_condition) extra.push(`[${i.item_condition}]`);
+      if (i.serial_number) extra.push(`SN:${i.serial_number}`);
+      if (i.warranty_period && i.warranty_period !== 'គ្មានការធានា') extra.push(`(ធានា:${i.warranty_period})`);
+      const extraStr = extra.length > 0 ? ` <i>${extra.join(' ')}</i>` : '';
+      return `• <b>${i.product_name}</b> (x${i.quantity}) - $${Number(i.total_amount).toFixed(2)}${extraStr}`;
+    }).join('\n');
+
+    const khrTotal = Math.round((Number(sale.total_amount) || 0) * 4100).toLocaleString();
+
+    const msg = `🧾 <b>ការលក់ថ្មី / NEW SALE</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `<b>វិក្កយបត្រ:</b> <code>#${sale.invoice_no}</code>\n` +
+      `<b>កាលបរិច្ឆេទ:</b> ${sale.sale_date} ${sale.sale_time || ''}\n` +
+      `<b>អ្នកលក់:</b> ${sale.seller_name || 'ទូទៅ'}\n` +
+      `<b>អតិថិជន:</b> ${sale.customer_name || 'អតិថិជនទូទៅ'}\n` +
+      `<b>វិធីទូទាត់:</b> ${sale.payment_method}\n` +
+      `───────────────────\n` +
+      (itemsText || '• ទំនិញទូទៅ') + `\n` +
+      `───────────────────\n` +
+      `💰 <b>សរុប (TOTAL):</b> <b>$${Number(sale.total_amount).toFixed(2)}</b> (${khrTotal} ៛)\n` +
+      `🏪 <i>ហាង MRC KH - ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក</i>`;
+
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML' })
+    });
+    return await resp.json();
+  } catch (err) {
+    console.error('Error sending Telegram notification:', err.message);
+  }
+}
+
+// Test Telegram endpoint
+app.post('/api/telegram/test', async (req, res) => {
+  try {
+    const { token, chat_id } = req.body;
+    if (!token || !chat_id) {
+      return res.status(400).json({ success: false, message: 'Bot Token and Chat ID are required' });
+    }
+    const testMsg = `🎉 <b>តេស្តភ្ជាប់ Telegram ជោគជ័យ!</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `ប្រព័ន្ធគ្រប់គ្រងហាង <b>MRC KH - ហាងលក់អីវ៉ាន់ថ្មី និងមួយទឹក</b> បានភ្ជាប់ជាមួយ Telegram Channel នេះយ៉ាងជោគជ័យ។\n` +
+      `រាល់ពេលមានការលក់ទំនិញថ្មីៗ វិក្កយបត្រនឹងត្រូវផ្ញើមកទីនេះដោយស្វ័យប្រវត្តិ។\n` +
+      `⏰ <i>${new Date().toLocaleString()}</i>`;
+
+    const url = `https://api.telegram.org/bot${token.trim()}/sendMessage`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chat_id.trim(), text: testMsg, parse_mode: 'HTML' })
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      res.json({ success: true, message: 'បានផ្ញើសារតេស្តសាកល្បងទៅ Telegram ដោយជោគជ័យ!' });
+    } else {
+      res.status(400).json({ success: false, message: data.description || 'Telegram API Error' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================================================
+// FEATURE: Daily Z-Report (End of Day / Cash Drawer Shift Closing)
+// ==========================================================================
+app.get('/api/reports/z-report', (req, res) => {
+  try {
+    const reportDate = req.query.date || getLocalDateStr();
+    const sales = db.prepare('SELECT * FROM sales WHERE sale_date = ? ORDER BY id ASC').all(reportDate);
+
+    let totalRevenue = 0;
+    let totalCost = 0;
+    let totalProfit = 0;
+    let totalItems = 0;
+    let discountSum = 0;
+    let taxSum = 0;
+
+    const breakdown = {
+      cash: 0,
+      aba: 0,
+      acleda: 0,
+      wing: 0,
+      card: 0,
+      other: 0
+    };
+
+    sales.forEach(s => {
+      const amount = Number(s.total_amount) || 0;
+      totalRevenue += amount;
+      totalCost += Number(s.total_cost) || 0;
+      totalProfit += Number(s.profit) || 0;
+      totalItems += Number(s.quantity) || 1;
+      discountSum += Number(s.discount_amount) || 0;
+      taxSum += Number(s.tax_amount) || 0;
+
+      const method = (s.payment_method || '').toLowerCase();
+      if (method.includes('cash') || method.includes('សាច់ប្រាក់')) {
+        breakdown.cash += amount;
+      } else if (method.includes('aba')) {
+        breakdown.aba += amount;
+      } else if (method.includes('acleda') || method.includes('អេស៊ីលីដា')) {
+        breakdown.acleda += amount;
+      } else if (method.includes('wing') || method.includes('វីង')) {
+        breakdown.wing += amount;
+      } else if (method.includes('card') || method.includes('កាត')) {
+        breakdown.card += amount;
+      } else {
+        breakdown.other += amount;
+      }
+    });
+
+    const items = db.prepare(`
+      SELECT si.product_name, si.item_condition, SUM(si.quantity) as total_qty, SUM(si.total_amount) as total_rev
+      FROM sale_items si
+      JOIN sales s ON si.sale_id = s.id
+      WHERE s.sale_date = ?
+      GROUP BY si.product_name, si.item_condition
+      ORDER BY total_qty DESC
+      LIMIT 10
+    `).all(reportDate);
+
+    res.json({
+      success: true,
+      data: {
+        date: reportDate,
+        total_transactions: sales.length,
+        total_revenue: totalRevenue,
+        total_revenue_khr: Math.round(totalRevenue * 4100),
+        total_cost: totalCost,
+        total_profit: totalProfit,
+        total_items: totalItems,
+        total_discount: discountSum,
+        total_tax: taxSum,
+        breakdown: breakdown,
+        top_items: items,
+        sales_summary: sales.map(s => ({
+          invoice_no: s.invoice_no,
+          time: s.sale_time,
+          customer: s.customer_name,
+          payment: s.payment_method,
+          amount: s.total_amount
+        }))
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ==========================================================================
+// FEATURE: 1-Click Database Download & Automated Backup
+// ==========================================================================
+app.get('/api/backup/database', (req, res) => {
+  try {
+    const dbPath = path.join(__dirname, 'database.sqlite');
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ success: false, message: 'Database file not found' });
+    }
+    const filename = `mrckh_database_backup_${getLocalDateStr().replace(/-/g, '')}.sqlite`;
+    res.download(dbPath, filename);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Automated Daily Database Backup Routine
+function performAutomatedBackup() {
+  try {
+    const backupDir = path.join(__dirname, 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    const dbFile = path.join(__dirname, 'database.sqlite');
+    if (fs.existsSync(dbFile)) {
+      const targetFile = path.join(backupDir, `mrc_auto_backup_${getLocalDateStr().replace(/-/g, '')}.sqlite`);
+      fs.copyFileSync(dbFile, targetFile);
+      console.log('Automated daily backup created:', targetFile);
+
+      // Clean old backups keeping last 14 days
+      const files = fs.readdirSync(backupDir).filter(f => f.startsWith('mrc_auto_backup_'));
+      if (files.length > 14) {
+        files.sort().slice(0, files.length - 14).forEach(old => {
+          try { fs.unlinkSync(path.join(backupDir, old)); } catch (e) {}
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Automated backup error:', err.message);
+  }
+}
+setTimeout(performAutomatedBackup, 5000);
+setInterval(performAutomatedBackup, 24 * 60 * 60 * 1000);
 
 // Catch-all route to serve index.html
 app.use((req, res) => {

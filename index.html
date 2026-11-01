@@ -887,8 +887,11 @@
         </div>
 
         <div style="margin-top: 14px; font-size: 0.8rem; color: var(--text-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <span id="salesRecordsCountText">រកឃើញប្រតិបត្តិការលក់ 12</span>
-          <div style="display: flex; gap: 8px;">
+          <span id="salesRecordsCountText">រកឃើញប្រតិបត្តិការលក់ 0</span>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="btnOpenZReportModal" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem; background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.3); color: #818cf8;" title="Z-Report / Daily Shift Closing">
+              <span>📊</span> <span data-i18n="btnZReport">បិទបញ្ជីចុងថ្ងៃ (Z-Report)</span>
+            </button>
             <button id="btnOpenAddProductHeader" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem;">
               <span>📦</span> <span data-i18n="btnAddProduct">បន្ថែមមុខទំនិញថ្មី</span>
             </button>
@@ -911,6 +914,9 @@
                 <input type="text" id="posProductSearch" class="search-input" placeholder="ស្វែងរកទំនិញ ឬកូដ SKU..." data-i18n-placeholder="searchSalesPlaceholder">
                 <button id="posProductSearchClear" class="search-clear-btn" type="button">✕</button>
               </div>
+              <button type="button" id="btnPosOpenScanner" class="btn btn-secondary" style="height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; white-space: nowrap;" title="Scan Barcode / QR with Camera">
+                <span>📷</span> <span data-i18n="btnCameraScan">ស្កេនកាមេរ៉ា</span>
+              </button>
               <div class="pos-category-chips" id="posCategoryChips">
                 <!-- Dynamically populated category chips -->
               </div>
@@ -1650,12 +1656,61 @@
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
               <div>
                 <h4 style="margin: 0; font-size: 1rem;" data-i18n="setBackup">ការបម្រុងទុកទិន្នន័យ (Full Backup)</h4>
-                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-subtle);">ទាញយកទិន្នន័យទាំងអស់ (បុគ្គលិក, ការលក់, អតិថិជន, ចំណាយ, ប្រាក់ខែ) ជា JSON</p>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-subtle);">ទាញយកទិន្នន័យទាំងអស់ជា JSON ឬ SQLite Database ផ្ទាល់</p>
               </div>
-              <button type="button" id="btnExportFullBackupJson" class="btn btn-secondary" style="border-color: #6366f1; color: #a5b4fc;">
-                <span>📦</span> <span data-i18n="btnExportBackup">ទាញយក Full Backup JSON</span>
-              </button>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" id="btnDownloadSqliteDb" class="btn btn-primary" style="background: linear-gradient(135deg, #059669, #10b981);">
+                  <span>💾</span> <span>ទាញយក SQLite DB</span>
+                </button>
+                <button type="button" id="btnExportFullBackupJson" class="btn btn-secondary" style="border-color: #6366f1; color: #a5b4fc;">
+                  <span>📦</span> <span data-i18n="btnExportBackup">ទាញយក JSON</span>
+                </button>
+              </div>
             </div>
+          </div>
+
+          <!-- Telegram Bot Integration Card -->
+          <div class="table-card" style="padding: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+              <span style="font-size: 1.5rem;">✈️</span>
+              <div>
+                <h3 style="margin: 0; font-size: 1.15rem;">ភ្ជាប់ Telegram Bot & ជូនដំណឹងស្វ័យប្រវត្តិ</h3>
+                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-subtle);">ផ្ញើដំណឹងការលក់ និងវិក្កយបត្រភ្លាមៗចូលទៅកាន់ Telegram Group/Channel</p>
+              </div>
+            </div>
+
+            <form id="settingsTelegramForm">
+              <div class="form-grid">
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label">Telegram Bot Token</label>
+                  <input type="text" id="setTelegramBotToken" class="form-input" placeholder="ឧ. 7123456789:AAHkL1...">
+                  <small style="font-size: 0.72rem; color: var(--text-subtle);">បង្កើតតាម @BotFather លើ Telegram</small>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label class="form-label">Telegram Chat ID / Channel ID</label>
+                  <input type="text" id="setTelegramChatId" class="form-input" placeholder="ឧ. -100123456789 ឬ Chat ID ផ្ទាល់ខ្លួន">
+                  <small style="font-size: 0.72rem; color: var(--text-subtle);">Chat ID ឬ Group ID ដែលត្រូវទទួលដំណឹង</small>
+                </div>
+
+                <div style="grid-column: 1 / -1;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+                    <input type="checkbox" id="setTelegramSalesEnabled" checked style="width: 18px; height: 18px;">
+                    <span>បើកដំណើរការផ្ញើដំណឹងពេលមានការលក់ទំនិញថ្មី (Instant Sale Notification)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <button type="button" id="btnTestTelegram" class="btn btn-secondary" style="border-color: #0284c7; color: #38bdf8;">
+                  <span>📡</span> <span>ផ្ញើសារតេស្តសាកល្បង</span>
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <span>💾</span> <span>រក្សាទុក Telegram Settings</span>
+                </button>
+              </div>
+            </form>
+          </div>
           </div>
         </div>
       </section>
@@ -2388,11 +2443,46 @@
               <input type="number" id="prodLowStockThreshold" class="form-input" min="0" step="1" value="5">
             </div>
 
-            <div style="grid-column: 1 / -1;">
+            <div>
               <label class="form-label">
                 <span data-i18n="fieldProductUnit">ខ្នាតឯកតា (Unit)</span>
               </label>
               <input type="text" id="prodUnit" class="form-input" placeholder="ឧ. គ្រឿង, ឈុត, កំប៉ុង, កញ្ចប់, pcs, set...">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span>ស្ថានភាពទំនិញ (Condition)</span>
+              </label>
+              <select id="prodCondition" class="form-select">
+                <option value="ថ្មី 100%">✨ ថ្មី 100% (Brand New)</option>
+                <option value="មួយទឹក 99%">⭐ មួយទឹក 99% (Like New)</option>
+                <option value="មួយទឹក 95%">👍 មួយទឹក 95% (Good Condition)</option>
+                <option value="មួយទឹក 90%">👌 មួយទឹក 90% (Fair Condition)</option>
+                <option value="មួយទឹក 80%">🔧 មួយទឹក 80% (Refurbished)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span>លេខ Serial / IMEI (បើមាន)</span>
+              </label>
+              <input type="text" id="prodSerialNumber" class="form-input" placeholder="ឧ. SN-88492019, IMEI: 35678...">
+            </div>
+
+            <div>
+              <label class="form-label">
+                <span>រយៈពេលធានា (Warranty)</span>
+              </label>
+              <select id="prodWarranty" class="form-select">
+                <option value="គ្មានការធានា">គ្មានការធានា (No Warranty)</option>
+                <option value="7 ថ្ងៃ">7 ថ្ងៃ (7 Days)</option>
+                <option value="1 ខែ">1 ខែ (1 Month)</option>
+                <option value="3 ខែ">3 ខែ (3 Months)</option>
+                <option value="6 ខែ">6 ខែ (6 Months)</option>
+                <option value="1 ឆ្នាំ">1 ឆ្នាំ (1 Year)</option>
+                <option value="2 ឆ្នាំ">2 ឆ្នាំ (2 Years)</option>
+              </select>
             </div>
 
             <div style="grid-column: 1 / -1;">
@@ -3106,6 +3196,86 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Camera Barcode & QR Scanner ================= -->
+  <div id="scannerModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>📷</span>
+          <h2 data-i18n="scannerModalTitle">ស្កេនបាកូដ / QR កាមេរ៉ា (Camera Scanner)</h2>
+        </div>
+        <button id="btnCloseScannerModal" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px; text-align: center;">
+        <div style="position: relative; width: 100%; max-width: 440px; margin: 0 auto; height: 320px; background: #000; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <video id="scannerVideo" playsinline autoplay muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+          <!-- Scanning target frame -->
+          <div style="position: absolute; width: 220px; height: 220px; border: 2px dashed #10b981; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45); pointer-events: none; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 100%; height: 2px; background: #ef4444; box-shadow: 0 0 8px #ef4444; animation: scannerLaser 2s infinite ease-in-out;"></div>
+          </div>
+          <div id="scannerStatusText" style="position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: #fff; font-size: 0.85rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); padding: 0 10px;">
+            កំពុងរៀបចំកាមេរ៉ា...
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; justify-content: center; gap: 10px;">
+          <button type="button" id="btnToggleCameraTorch" class="btn btn-secondary" style="font-size: 0.85rem; display: none;">
+            <span>🔦</span> <span data-i18n="btnTorch">ពិល (Torch)</span>
+          </button>
+          <button type="button" id="btnSwitchCamera" class="btn btn-secondary" style="font-size: 0.85rem;">
+            <span>🔄</span> <span data-i18n="btnSwitchCamera">ប្តូរកាមេរ៉ា (Switch)</span>
+          </button>
+        </div>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);" data-i18n="scannerHelpText">
+          ដាក់បាកូដ ឬ QR Code នៃផលិតផលឱ្យចំប្រអប់កណ្តាល។ ប្រព័ន្ធនឹងស្វែងរក និងបញ្ចូលក្នុងកន្រ្តកលក់ដោយស្វ័យប្រវត្តិ។
+        </p>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" id="btnStopScannerModal" class="btn btn-secondary" data-i18n="btnClose">បិទ (Close)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal: Z-Report / Daily Register Closing ================= -->
+  <div id="zReportModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span>📊</span>
+          <h2 data-i18n="zReportTitle">របាយការណ៍បិទបញ្ជីប្រចាំថ្ងៃ (Daily Z-Report)</h2>
+        </div>
+        <button onclick="document.getElementById('zReportModal').classList.remove('active')" class="btn-icon" style="border:none;" aria-label="Close" type="button">✕</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px;">
+        <!-- Date Selector -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: var(--bg-surface-secondary); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border-color);">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <label for="zReportDate" style="font-weight: 600; font-size: 0.9rem;" data-i18n="lblSelectDate">ជ្រើសរើសកាលបរិច្ឆេទ:</label>
+            <input type="date" id="zReportDate" class="form-input" style="width: auto; padding: 6px 12px; height: 38px;">
+          </div>
+          <button type="button" id="btnFetchZReport" class="btn btn-secondary" style="height: 38px;">
+            <span>🔄</span> <span data-i18n="btnRefresh">ផ្ទុកឡើងវិញ</span>
+          </button>
+        </div>
+
+        <!-- Z-Report Content (for Screen & Direct Print) -->
+        <div id="zReportContent" style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+          <div style="text-align: center; color: var(--text-muted); padding: 30px;">កំពុងទាញយកទិន្នន័យ...</div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button type="button" onclick="document.getElementById('zReportModal').classList.remove('active')" class="btn btn-secondary" data-i18n="btnClose">បិទ</button>
+        <button type="button" id="btnPrintZReportDirect" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669);">
+          <span>🖨️</span> <span data-i18n="btnPrintZReport">បោះពុម្ព Z-Report (80mm)</span>
+        </button>
+      </div>
     </div>
   </div>
 
