@@ -1267,11 +1267,19 @@ app.post('/api/employees', (req, res) => {
       shift_end
     } = req.body;
 
-    if (!first_name || !last_name || !email || !department || !position) {
-      return res.status(400).json({
-        success: false,
-        message: 'First name, last name, email, department, and position are required.'
-      });
+    // Support Khmer full name as primary identifier
+    if ((!first_name || !first_name.trim()) && (!last_name || !last_name.trim()) && khmer_name && khmer_name.trim()) {
+      const parts = khmer_name.trim().split(/\s+/);
+      last_name = parts[0] || 'MRC';
+      first_name = parts.slice(1).join(' ') || parts[0];
+    }
+    if (!first_name || !first_name.trim()) first_name = (khmer_name && khmer_name.trim()) || 'Staff';
+    if (!last_name || !last_name.trim()) last_name = 'Member';
+    if (!department || !department.trim()) department = 'Operations';
+    if (!position || !position.trim()) position = 'បុគ្គលិក';
+    if (!email || !email.trim()) {
+      const codeClean = (emp_code || ('EMP_' + Date.now())).toLowerCase().replace(/[^a-z0-9]/g, '');
+      email = `${codeClean}@mrckh.local`;
     }
 
     if (!emp_code || !emp_code.trim()) {
@@ -3566,6 +3574,146 @@ app.get('/api/backup', (req, res) => {
   }
 });
 
+// RESTORE BACKUP (1-Click Restore & Auto-Sync)
+app.post('/api/backup/restore', (req, res) => {
+  try {
+    const { tables } = req.body;
+    if (!tables) {
+      return res.status(400).json({ success: false, message: 'ទិន្នន័យ Backup មិនត្រឹមត្រូវ (Invalid backup format)' });
+    }
+
+    db.exec('BEGIN TRANSACTION;');
+    try {
+      if (Array.isArray(tables.employees) && tables.employees.length > 0) {
+        db.exec('DELETE FROM employees;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO employees 
+          (id, emp_code, first_name, last_name, khmer_name, email, phone, department, position, salary, hire_date, status, gender, avatar_color, address, notes, shift_start, shift_end)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const e of tables.employees) {
+          stmt.run(e.id, e.emp_code, e.first_name, e.last_name, e.khmer_name || '', e.email || '', e.phone || '', e.department || '', e.position || '', e.salary || 0, e.hire_date || '', e.status || 'Active', e.gender || 'Other', e.avatar_color || '#3b82f6', e.address || '', e.notes || '', e.shift_start || '08:00', e.shift_end || '17:00');
+        }
+      }
+
+      if (Array.isArray(tables.products) && tables.products.length > 0) {
+        db.exec('DELETE FROM products;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO products
+          (id, code, name, category, cost_price, selling_price, stock_qty, low_stock_threshold, unit, image_url, notes, condition, serial_number, warranty_period)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const p of tables.products) {
+          stmt.run(p.id, p.code, p.name, p.category || '', p.cost_price || 0, p.selling_price || 0, p.stock_qty || 0, p.low_stock_threshold || 5, p.unit || 'pcs', p.image_url || '', p.notes || '', p.condition || 'ថ្មី 100%', p.serial_number || '', p.warranty_period || '');
+        }
+      }
+
+      if (Array.isArray(tables.sales) && tables.sales.length > 0) {
+        db.exec('DELETE FROM sales;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO sales
+          (id, invoice_no, customer_name, customer_phone, subtotal, discount, tax_amount, total_amount, payment_status, payment_method, notes, sale_date)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const s of tables.sales) {
+          stmt.run(s.id, s.invoice_no, s.customer_name || '', s.customer_phone || '', s.subtotal || 0, s.discount || 0, s.tax_amount || 0, s.total_amount || 0, s.payment_status || 'Paid', s.payment_method || 'Cash', s.notes || '', s.sale_date || '');
+        }
+      }
+
+      if (Array.isArray(tables.sale_items) && tables.sale_items.length > 0) {
+        db.exec('DELETE FROM sale_items;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO sale_items
+          (id, sale_id, product_id, product_name, product_code, quantity, unit_price, total_price)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const i of tables.sale_items) {
+          stmt.run(i.id, i.sale_id, i.product_id || null, i.product_name, i.product_code || '', i.quantity || 1, i.unit_price || 0, i.total_price || 0);
+        }
+      }
+
+      if (Array.isArray(tables.attendances) && tables.attendances.length > 0) {
+        db.exec('DELETE FROM attendances;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO attendances
+          (id, employee_id, attendance_date, check_in, check_out, status, work_hours, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const a of tables.attendances) {
+          stmt.run(a.id, a.employee_id, a.attendance_date, a.check_in || null, a.check_out || null, a.status || 'Present', a.work_hours || 0, a.notes || '');
+        }
+      }
+
+      if (Array.isArray(tables.leaves) && tables.leaves.length > 0) {
+        db.exec('DELETE FROM leave_requests;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO leave_requests
+          (id, employee_id, leave_type, start_date, end_date, days_count, reason, status, approved_by, rejection_reason)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const l of tables.leaves) {
+          stmt.run(l.id, l.employee_id, l.leave_type, l.start_date, l.end_date, l.days_count || 1, l.reason || '', l.status || 'Pending', l.approved_by || '', l.rejection_reason || '');
+        }
+      }
+
+      if (Array.isArray(tables.customers) && tables.customers.length > 0) {
+        db.exec('DELETE FROM customers;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO customers
+          (id, customer_code, name, phone, email, telegram, address, customer_type, total_spent, total_orders, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const c of tables.customers) {
+          stmt.run(c.id, c.customer_code || '', c.name, c.phone || '', c.email || '', c.telegram || '', c.address || '', c.customer_type || 'Regular', c.total_spent || 0, c.total_orders || 0, c.notes || '');
+        }
+      }
+
+      if (Array.isArray(tables.expenses) && tables.expenses.length > 0) {
+        db.exec('DELETE FROM expenses;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO expenses
+          (id, title, category, amount, expense_date, payment_method, recorded_by, receipt_number, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const ex of tables.expenses) {
+          stmt.run(ex.id, ex.title, ex.category, ex.amount || 0, ex.expense_date, ex.payment_method || 'Cash', ex.recorded_by || '', ex.receipt_number || '', ex.notes || '');
+        }
+      }
+
+      if (Array.isArray(tables.payrolls) && tables.payrolls.length > 0) {
+        db.exec('DELETE FROM payrolls;');
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO payrolls
+          (id, employee_id, employee_name, month_str, base_salary, bonus, allowance, deduction, net_salary, payment_date, payment_status, payment_method, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const p of tables.payrolls) {
+          stmt.run(p.id, p.employee_id, p.employee_name, p.month_str, p.base_salary || 0, p.bonus || 0, p.allowance || 0, p.deduction || 0, p.net_salary || 0, p.payment_date || '', p.payment_status || 'Pending', p.payment_method || 'Cash', p.notes || '');
+        }
+      }
+
+      if (tables.settings) {
+        const stmt = db.prepare('INSERT OR REPLACE INTO store_settings (key, value) VALUES (?, ?)');
+        const entries = Array.isArray(tables.settings)
+          ? tables.settings.map(s => [s.key, s.value])
+          : Object.entries(tables.settings);
+        for (const [k, v] of entries) {
+          stmt.run(k, String(v));
+        }
+      }
+
+      db.exec('COMMIT;');
+      res.json({ success: true, message: 'ទិន្នន័យត្រូវបានស្តារឡើងវិញដោយជោគជ័យ (Database restored successfully)!' });
+    } catch (e) {
+      db.exec('ROLLBACK;');
+      throw e;
+    }
+  } catch (error) {
+    console.error('Error restoring backup:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // 13. Reset / Re-seed sample data
 app.post('/api/seed', (req, res) => {
   try {
@@ -3593,6 +3741,19 @@ app.post('/api/clear-all-data', (req, res) => {
 });
 
 // ==========================================================================
+function cleanTelegramChatId(input) {
+  if (!input) return '';
+  let id = input.trim();
+  if (id.includes('t.me/') && !id.includes('/+')) {
+    const parts = id.split('t.me/');
+    if (parts[1]) {
+      const u = parts[1].split(/[/?#]/)[0].trim();
+      if (u) return u.startsWith('@') ? u : `@${u}`;
+    }
+  }
+  return id;
+}
+
 // FEATURE: Telegram Bot Integration & Instant Sale Notifications
 // ==========================================================================
 async function sendTelegramSaleNotification(sale) {
@@ -3601,7 +3762,7 @@ async function sendTelegramSaleNotification(sale) {
     const chatIdRow = db.prepare("SELECT value FROM store_settings WHERE key = 'telegram_chat_id'").get();
     const enabledRow = db.prepare("SELECT value FROM store_settings WHERE key = 'telegram_sales_enabled'").get();
     const token = tokenRow ? tokenRow.value.trim() : '';
-    const chatId = chatIdRow ? chatIdRow.value.trim() : '';
+    const chatId = chatIdRow ? cleanTelegramChatId(chatIdRow.value) : '';
     const enabled = enabledRow ? enabledRow.value : 'true';
 
     if (!token || !chatId || enabled === 'false') return;
@@ -3655,11 +3816,12 @@ app.post('/api/telegram/test', async (req, res) => {
       `រាល់ពេលមានការលក់ទំនិញថ្មីៗ វិក្កយបត្រនឹងត្រូវផ្ញើមកទីនេះដោយស្វ័យប្រវត្តិ។\n` +
       `⏰ <i>${new Date().toLocaleString()}</i>`;
 
+    const cleanChatId = cleanTelegramChatId(chat_id);
     const url = `https://api.telegram.org/bot${token.trim()}/sendMessage`;
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat_id.trim(), text: testMsg, parse_mode: 'HTML' })
+      body: JSON.stringify({ chat_id: cleanChatId, text: testMsg, parse_mode: 'HTML' })
     });
     const data = await resp.json();
     if (data.ok) {
