@@ -420,7 +420,15 @@
     btnQtyPlus: document.getElementById('btnQtyPlus'),
     saleCostPrice: document.getElementById('saleCostPrice'),
     saleSellingPrice: document.getElementById('saleSellingPrice'),
+    saleDiscountVal: document.getElementById('saleDiscountVal'),
+    btnSaleDiscountFixed: document.getElementById('btnSaleDiscountFixed'),
+    btnSaleDiscountPercent: document.getElementById('btnSaleDiscountPercent'),
+    saleDiscountPreviewText: document.getElementById('saleDiscountPreviewText'),
     calcTotalCostVal: document.getElementById('calcTotalCostVal'),
+    calcSubtotalVal: document.getElementById('calcSubtotalVal'),
+    calcDiscountDivider: document.getElementById('calcDiscountDivider'),
+    calcDiscountItem: document.getElementById('calcDiscountItem'),
+    calcDiscountValDisplay: document.getElementById('calcDiscountValDisplay'),
     calcTotalRevenueVal: document.getElementById('calcTotalRevenueVal'),
     calcTotalProfitVal: document.getElementById('calcTotalProfitVal'),
     saleSellerName: document.getElementById('saleSellerName'),
@@ -675,6 +683,8 @@
     setBakongNameInput: document.getElementById('setBakongNameInput'),
     setBakongIdInput: document.getElementById('setBakongIdInput'),
     btnExportFullBackupJson: document.getElementById('btnExportFullBackupJson'),
+    btnImportFullBackupJson: document.getElementById('btnImportFullBackupJson'),
+    inputImportBackupFile: document.getElementById('inputImportBackupFile'),
 
     // Toast Container
     toastContainer: document.getElementById('toastContainer')
@@ -738,7 +748,13 @@
     await loadSales();
     applySalesSubView('pos');
     await loadDashboard();
-    switchTab('dashboard');
+
+    // Check if cloud container was restarted/reset and auto-restore from browser shield
+    await checkAndAutoRestoreFromBrowserCache();
+
+    // Preserve active tab across page refresh (F5)
+    const savedTab = localStorage.getItem('mrckh_active_tab') || 'dashboard';
+    switchTab(savedTab);
     updateNavBadges();
   }
 
@@ -770,6 +786,9 @@
 
   function switchTab(tab) {
     state.activeTab = tab;
+    try {
+      localStorage.setItem('mrckh_active_tab', tab);
+    } catch (e) {}
     if (DOM.tabDashboard) DOM.tabDashboard.classList.toggle('active', tab === 'dashboard');
     if (DOM.tabSales) DOM.tabSales.classList.toggle('active', tab === 'sales');
     if (DOM.tabEmployees) DOM.tabEmployees.classList.toggle('active', tab === 'employees');
@@ -885,6 +904,8 @@
         state.employees = result.data || [];
         renderEmployees();
         populateEmployeeDropdown();
+        populateAttendanceEmployeeSelect();
+        updateBrowserDataMirror();
       } else {
         showToast(result.message || window.i18n.t('toastError'), 'error');
       }
@@ -2199,6 +2220,37 @@
     if (DOM.saleQuantity) DOM.saleQuantity.oninput = updateSaleModalCalc;
     if (DOM.saleCostPrice) DOM.saleCostPrice.oninput = updateSaleModalCalc;
     if (DOM.saleSellingPrice) DOM.saleSellingPrice.oninput = updateSaleModalCalc;
+    if (DOM.saleDiscountVal) DOM.saleDiscountVal.oninput = updateSaleModalCalc;
+
+    if (DOM.btnSaleDiscountFixed) {
+      DOM.btnSaleDiscountFixed.onclick = () => {
+        state.saleModalDiscountType = 'fixed';
+        DOM.btnSaleDiscountFixed.classList.add('active');
+        if (DOM.btnSaleDiscountPercent) DOM.btnSaleDiscountPercent.classList.remove('active');
+        updateSaleModalCalc();
+      };
+    }
+    if (DOM.btnSaleDiscountPercent) {
+      DOM.btnSaleDiscountPercent.onclick = () => {
+        state.saleModalDiscountType = 'percentage';
+        DOM.btnSaleDiscountPercent.classList.add('active');
+        if (DOM.btnSaleDiscountFixed) DOM.btnSaleDiscountFixed.classList.remove('active');
+        updateSaleModalCalc();
+      };
+    }
+
+    document.querySelectorAll('.btn-chip-sale-discount').forEach(chip => {
+      chip.onclick = () => {
+        document.querySelectorAll('.btn-chip-sale-discount').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const pct = parseFloat(chip.getAttribute('data-pct')) || 0;
+        state.saleModalDiscountType = 'percentage';
+        if (DOM.btnSaleDiscountPercent) DOM.btnSaleDiscountPercent.classList.add('active');
+        if (DOM.btnSaleDiscountFixed) DOM.btnSaleDiscountFixed.classList.remove('active');
+        if (DOM.saleDiscountVal) DOM.saleDiscountVal.value = pct;
+        updateSaleModalCalc();
+      };
+    });
 
     if (DOM.btnQtyMinus) {
       DOM.btnQtyMinus.onclick = () => {
@@ -2606,6 +2658,14 @@
     if (DOM.settingsStoreForm) DOM.settingsStoreForm.onsubmit = saveStoreProfile;
     if (DOM.settingsFinanceForm) DOM.settingsFinanceForm.onsubmit = saveFinanceSettings;
     if (DOM.btnExportFullBackupJson) DOM.btnExportFullBackupJson.onclick = exportFullBackupJson;
+    if (DOM.btnImportFullBackupJson && DOM.inputImportBackupFile) {
+      DOM.btnImportFullBackupJson.onclick = () => { DOM.inputImportBackupFile.click(); };
+      DOM.inputImportBackupFile.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+          importFullBackupJson(e.target.files[0]);
+        }
+      };
+    }
     if (DOM.settingsTelegramForm) DOM.settingsTelegramForm.onsubmit = saveTelegramSettings;
     if (DOM.btnTestTelegram) DOM.btnTestTelegram.onclick = testTelegramNotification;
     if (DOM.btnDownloadSqliteDb) DOM.btnDownloadSqliteDb.onclick = () => { window.location.href = '/api/backup/database'; };
@@ -2633,12 +2693,22 @@
   }
 
   function getSaleFormData() {
+    const discType = state.saleModalDiscountType || 'fixed';
+    const discVal = parseFloat(DOM.saleDiscountVal ? DOM.saleDiscountVal.value : 0) || 0;
+    const qty = parseFloat(DOM.saleQuantity.value) || 1;
+    const sell = parseFloat(DOM.saleSellingPrice.value) || 0;
+    const subtotal = qty * sell;
+    const discAmount = discType === 'percentage' ? (subtotal * (discVal / 100)) : Math.min(subtotal, discVal);
+
     return {
       product_name: DOM.saleProductName.value.trim(),
       category: DOM.saleCategory.value,
-      quantity: parseFloat(DOM.saleQuantity.value) || 1,
+      quantity: qty,
       cost_price: parseFloat(DOM.saleCostPrice.value) || 0,
-      selling_price: parseFloat(DOM.saleSellingPrice.value) || 0,
+      selling_price: sell,
+      discount_type: discType,
+      discount_val: discVal,
+      discount_amount: Math.round(discAmount * 100) / 100,
       seller_name: DOM.saleSellerName.value.trim(),
       customer_name: DOM.saleCustomerName.value.trim(),
       payment_method: DOM.salePaymentMethod.value,
@@ -2909,6 +2979,7 @@
       if (result.success) {
         state.sales = result.data || [];
         renderSalesTable();
+        updateBrowserDataMirror();
       }
     } catch (err) {
       console.error('Error loading sales:', err);
@@ -3213,6 +3284,7 @@
         renderPosCatalog();
         renderInventoryTable();
         populateCategoryOptions();
+        updateBrowserDataMirror();
       }
     } catch (err) {
       console.error('Error loading products:', err);
@@ -3891,14 +3963,43 @@
     const qty = parseFloat(DOM.saleQuantity.value) || 0;
     const cost = parseFloat(DOM.saleCostPrice.value) || 0;
     const sell = parseFloat(DOM.saleSellingPrice.value) || 0;
+    const discType = state.saleModalDiscountType || 'fixed';
+    const discVal = parseFloat(DOM.saleDiscountVal ? DOM.saleDiscountVal.value : 0) || 0;
 
     const totalCost = qty * cost;
-    const totalRev = qty * sell;
-    const profit = totalRev - totalCost;
-    const margin = totalRev > 0 ? (profit / totalRev) * 100 : 0;
+    const subtotal = qty * sell;
+    let discAmount = 0;
+    if (discType === 'percentage') {
+      discAmount = subtotal * (discVal / 100);
+    } else {
+      discAmount = Math.min(subtotal, discVal);
+    }
+    discAmount = Math.round(discAmount * 100) / 100;
+    const finalTotal = Math.max(0, subtotal - discAmount);
+    const profit = finalTotal - totalCost;
+    const margin = finalTotal > 0 ? (profit / finalTotal) * 100 : 0;
+
+    if (DOM.saleDiscountPreviewText) {
+      DOM.saleDiscountPreviewText.textContent = discType === 'percentage' 
+        ? `-${discVal}% (-$${discAmount.toFixed(2)})` 
+        : `-$${discAmount.toFixed(2)}`;
+    }
 
     if (DOM.calcTotalCostVal) DOM.calcTotalCostVal.textContent = `$${totalCost.toFixed(2)}`;
-    if (DOM.calcTotalRevenueVal) DOM.calcTotalRevenueVal.textContent = `$${totalRev.toFixed(2)}`;
+    if (DOM.calcSubtotalVal) DOM.calcSubtotalVal.textContent = `$${subtotal.toFixed(2)}`;
+
+    if (DOM.calcDiscountDivider && DOM.calcDiscountItem && DOM.calcDiscountValDisplay) {
+      if (discAmount > 0) {
+        DOM.calcDiscountDivider.style.display = 'block';
+        DOM.calcDiscountItem.style.display = 'block';
+        DOM.calcDiscountValDisplay.textContent = `-$${discAmount.toFixed(2)}`;
+      } else {
+        DOM.calcDiscountDivider.style.display = 'none';
+        DOM.calcDiscountItem.style.display = 'none';
+      }
+    }
+
+    if (DOM.calcTotalRevenueVal) DOM.calcTotalRevenueVal.textContent = `$${finalTotal.toFixed(2)}`;
     if (DOM.calcTotalProfitVal) {
       const sign = profit >= 0 ? '+' : '-';
       DOM.calcTotalProfitVal.textContent = `${sign}$${Math.abs(profit).toFixed(2)} (${margin.toFixed(1)}%)`;
@@ -3922,6 +4023,8 @@
       DOM.saleQuantity.value = sale.quantity || 1;
       DOM.saleCostPrice.value = (sale.cost_price || 0).toFixed(2);
       DOM.saleSellingPrice.value = (sale.selling_price || 0).toFixed(2);
+      state.saleModalDiscountType = sale.discount_type || 'fixed';
+      if (DOM.saleDiscountVal) DOM.saleDiscountVal.value = sale.discount_val || 0;
       DOM.saleSellerName.value = sale.seller_name || '';
       DOM.salePaymentMethod.value = sale.payment_method || 'Cash';
       DOM.saleDateInput.value = sale.sale_date || todayStr;
@@ -3936,6 +4039,8 @@
       DOM.saleQuantity.value = 1;
       DOM.saleCostPrice.value = '250.00';
       DOM.saleSellingPrice.value = '340.00';
+      state.saleModalDiscountType = 'fixed';
+      if (DOM.saleDiscountVal) DOM.saleDiscountVal.value = 0;
       DOM.saleDateInput.value = todayStr;
       DOM.saleTimeInput.value = nowTime;
       DOM.saleCustomerName.value = '';
@@ -3947,6 +4052,15 @@
         DOM.saleSellerName.value = emp.khmer_name ? `${emp.khmer_name} (${emp.first_name} ${emp.last_name})` : `${emp.first_name} ${emp.last_name}`;
       }
       syncQuickCategoryChips('គ្រឿងអេឡិចត្រូនិក & IT', false);
+    }
+
+    // Update discount type segmented button states
+    if (state.saleModalDiscountType === 'percentage') {
+      if (DOM.btnSaleDiscountPercent) DOM.btnSaleDiscountPercent.classList.add('active');
+      if (DOM.btnSaleDiscountFixed) DOM.btnSaleDiscountFixed.classList.remove('active');
+    } else {
+      if (DOM.btnSaleDiscountFixed) DOM.btnSaleDiscountFixed.classList.add('active');
+      if (DOM.btnSaleDiscountPercent) DOM.btnSaleDiscountPercent.classList.remove('active');
     }
 
     updateSaleModalCalc();
@@ -5048,6 +5162,7 @@
       if (result.success) {
         state.customers = result.data || [];
         renderCustomers();
+        updateBrowserDataMirror();
       }
     } catch (err) {
       console.error('Failed to load customers:', err);
@@ -5260,6 +5375,7 @@
       if (result.success) {
         state.expenses = result.data || [];
         renderExpenses();
+        updateBrowserDataMirror();
       }
 
       const sRes = await fetch('/api/expenses/stats');
@@ -5793,8 +5909,9 @@
       showToast('កំពុងប្រមូលទិន្នន័យដើម្បីទាញយក...', 'info');
       const res = await fetch('/api/backup');
       const result = await res.json();
-      if (result.success) {
-        const jsonStr = JSON.stringify(result.data, null, 2);
+      if (result.success || result.tables) {
+        const dataToSave = result.tables ? result : (result.data || result);
+        const jsonStr = JSON.stringify(dataToSave, null, 2);
         const today = new Date().toISOString().slice(0, 10);
         downloadBlob(jsonStr, `mrc_kh_full_backup_${today}.json`, 'application/json');
         showToast('បានទាញយកទិន្នន័យបម្រុងទុកពេញលេញដោយជោគជ័យ!', 'success');
@@ -5804,6 +5921,101 @@
     } catch (err) {
       showToast('Error exporting backup', 'error');
     }
+  }
+
+  async function importFullBackupJson(file) {
+    if (!file) return;
+    try {
+      showToast('កំពុងអាន និងស្តារទិន្នន័យពី JSON...', 'info');
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const content = JSON.parse(e.target.result);
+          const tables = content.tables || content.data || content;
+          const res = await fetch('/api/backup/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tables })
+          });
+          const result = await res.json();
+          if (result.success) {
+            showToast('ទិន្នន័យត្រូវបានស្តារឡើងវិញដោយជោគជ័យ!', 'success');
+            setTimeout(() => { window.location.reload(); }, 1200);
+          } else {
+            showToast(result.message || 'Error restoring backup', 'error');
+          }
+        } catch (err) {
+          showToast('ឯកសារ JSON មិនត្រឹមត្រូវ: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file);
+    } catch (err) {
+      showToast('Error importing backup: ' + err.message, 'error');
+    }
+  }
+
+  // ---------------- Browser Persistent Cache & Auto-Sync ----------------
+
+  function updateBrowserDataMirror() {
+    try {
+      const mirror = {
+        employees: state.employees || [],
+        products: state.products || [],
+        sales: state.sales || [],
+        leaves: state.leaves || [],
+        customers: state.customers || [],
+        expenses: state.expenses || [],
+        payrolls: state.payrolls || [],
+        settings: state.settings || {}
+      };
+      // Keep mirror updated if there is any data
+      if (mirror.employees.length > 0 || mirror.products.length > 0 || mirror.sales.length > 0 || Object.keys(mirror.settings).length > 0) {
+        localStorage.setItem('mrckh_auto_backup_tables', JSON.stringify(mirror));
+      }
+    } catch (e) {
+      console.warn('Could not mirror data to localStorage:', e);
+    }
+  }
+
+  async function checkAndAutoRestoreFromBrowserCache() {
+    try {
+      const totalServerRecords = (state.employees ? state.employees.length : 0) +
+                                 (state.products ? state.products.length : 0) +
+                                 (state.sales ? state.sales.length : 0);
+
+      const cached = localStorage.getItem('mrckh_auto_backup_tables');
+      if (totalServerRecords === 0 && cached) {
+        const parsed = JSON.parse(cached);
+        const hasCachedData = (parsed.employees && parsed.employees.length > 0) ||
+                              (parsed.products && parsed.products.length > 0) ||
+                              (parsed.sales && parsed.sales.length > 0);
+        if (hasCachedData) {
+          console.log('[Auto-Sync] Restoring data from browser persistent cache...');
+          const res = await fetch('/api/backup/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tables: parsed })
+          });
+          const resData = await res.json();
+          if (resData.success) {
+            showToast('✨ ទិន្នន័យត្រូវបានការពារ និងស្តារឡើងវិញដោយស្វ័យប្រវត្តិ!', 'success');
+            await loadSettings();
+            await loadStats();
+            await loadEmployees();
+            await loadLeaveStats();
+            await loadLeaves();
+            await loadProducts();
+            await loadSalesStats();
+            await loadSales();
+            await loadDashboard();
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Auto-restore check failed:', e);
+    }
+    return false;
   }
 
   // ---------------- Telegram Bot Settings & Testing ----------------

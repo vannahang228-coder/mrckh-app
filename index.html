@@ -1665,6 +1665,10 @@
                 <button type="button" id="btnExportFullBackupJson" class="btn btn-secondary" style="border-color: #6366f1; color: #a5b4fc;">
                   <span>📦</span> <span data-i18n="btnExportBackup">ទាញយក JSON</span>
                 </button>
+                <button type="button" id="btnImportFullBackupJson" class="btn btn-secondary" style="border-color: #10b981; color: #6ee7b7;">
+                  <span>📥</span> <span>បញ្ចូល Backup ពី JSON</span>
+                </button>
+                <input type="file" id="inputImportBackupFile" accept=".json" style="display: none;">
               </div>
             </div>
           </div>
@@ -1744,22 +1748,22 @@
             </div>
 
             <div>
-              <label class="form-label">
-                <span data-i18n="fieldFirstName">នាមខ្លួន (First Name)</span> <span class="req">*</span>
-              </label>
-              <input type="text" id="empFirstName" class="form-input" required placeholder="ឧ. Dara">
+              <label class="form-label" data-i18n="fieldKhmerName">ឈ្មោះពេញជាភាសាខ្មែរ <span class="req">*</span></label>
+              <input type="text" id="empKhmerName" class="form-input" required placeholder="ឧ. ចាន់ តារា">
             </div>
 
             <div>
               <label class="form-label">
-                <span data-i18n="fieldLastName">គោត្តនាម (Last Name)</span> <span class="req">*</span>
+                <span data-i18n="fieldFirstName">នាមខ្លួន (First Name - English)</span>
               </label>
-              <input type="text" id="empLastName" class="form-input" required placeholder="ឧ. Chan">
+              <input type="text" id="empFirstName" class="form-input" placeholder="ឧ. Dara (អាចទុកទំនេរបាន)">
             </div>
 
             <div>
-              <label class="form-label" data-i18n="fieldKhmerName">ឈ្មោះពេញជាភាសាខ្មែរ</label>
-              <input type="text" id="empKhmerName" class="form-input" placeholder="ឧ. ចាន់ តារា">
+              <label class="form-label">
+                <span data-i18n="fieldLastName">គោត្តនាម (Last Name - English)</span>
+              </label>
+              <input type="text" id="empLastName" class="form-input" placeholder="ឧ. Chan (អាចទុកទំនេរបាន)">
             </div>
 
             <div>
@@ -1775,9 +1779,9 @@
 
             <div>
               <label class="form-label">
-                <span data-i18n="fieldEmail">អាសយដ្ឋានអ៊ីមែល</span> <span class="req">*</span>
+                <span data-i18n="fieldEmail">អាសយដ្ឋានអ៊ីមែល</span>
               </label>
-              <input type="email" id="empEmail" class="form-input" required placeholder="dara.chan@company.kh">
+              <input type="email" id="empEmail" class="form-input" placeholder="dara.chan@company.kh (អាចទុកទំនេរបាន)">
             </div>
 
             <div>
@@ -2284,6 +2288,31 @@
               <input type="number" id="saleSellingPrice" class="form-input" min="0" step="any" value="0.00" required placeholder="0.00">
             </div>
 
+            <!-- Discount Control Section -->
+            <div style="grid-column: 1 / -1; background: rgba(244, 63, 94, 0.06); border: 1px solid rgba(244, 63, 94, 0.2); border-radius: 10px; padding: 12px 14px;">
+              <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; color: #f43f5e; font-weight: 700;">
+                  <span>🏷️</span> <span data-i18n="fieldDiscount">បញ្ចុះតម្លៃ ឬ Discount</span>
+                </span>
+                <span id="saleDiscountPreviewText" style="font-size: 0.88rem; color: #f43f5e; font-weight: 700;">-$0.00</span>
+              </label>
+              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div class="btn-group-segmented" style="height: 38px; flex-shrink: 0; background: rgba(0,0,0,0.25); border-radius: 8px; padding: 2px;">
+                  <button type="button" id="btnSaleDiscountFixed" class="receipt-toggle-btn active" data-type="fixed" style="padding: 0 14px; font-weight: 700; font-size: 0.95rem;">$</button>
+                  <button type="button" id="btnSaleDiscountPercent" class="receipt-toggle-btn" data-type="percentage" style="padding: 0 14px; font-weight: 700; font-size: 0.95rem;">%</button>
+                </div>
+                <input type="number" id="saleDiscountVal" class="form-input" min="0" step="any" value="0" placeholder="0.00" style="flex: 1; min-width: 120px; height: 38px; font-weight: 700; font-size: 1rem; color: #f43f5e;">
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                  <button type="button" class="btn-chip-sale-discount active" data-pct="0">0%</button>
+                  <button type="button" class="btn-chip-sale-discount" data-pct="5">5%</button>
+                  <button type="button" class="btn-chip-sale-discount" data-pct="10">10%</button>
+                  <button type="button" class="btn-chip-sale-discount" data-pct="15">15%</button>
+                  <button type="button" class="btn-chip-sale-discount" data-pct="20">20%</button>
+                  <button type="button" class="btn-chip-sale-discount" data-pct="50">50%</button>
+                </div>
+              </div>
+            </div>
+
             <!-- Real-Time Calculation Card -->
             <div style="grid-column: 1 / -1;" class="calc-profit-card">
               <div class="calc-row">
@@ -2293,12 +2322,22 @@
                 </div>
                 <div class="calc-divider">→</div>
                 <div class="calc-item">
-                  <span class="calc-label" data-i18n="calcTotalRevenue">តម្លៃលក់សរុប</span>
-                  <span id="calcTotalRevenueVal" class="calc-val accent-val">$0.00</span>
+                  <span class="calc-label" data-i18n="calcSubtotal">តម្លៃលក់សរុប</span>
+                  <span id="calcSubtotalVal" class="calc-val accent-val">$0.00</span>
+                </div>
+                <div class="calc-divider" id="calcDiscountDivider" style="display: none;">-</div>
+                <div class="calc-item" id="calcDiscountItem" style="display: none;">
+                  <span class="calc-label" style="color: #f43f5e;">បញ្ចុះតម្លៃ</span>
+                  <span id="calcDiscountValDisplay" class="calc-val" style="color: #f43f5e;">-$0.00</span>
                 </div>
                 <div class="calc-divider">=</div>
                 <div class="calc-item">
-                  <span class="calc-label" data-i18n="calcEstimatedProfit">ប្រាក់ចំណេញប៉ាន់ស្មាន</span>
+                  <span class="calc-label" data-i18n="calcFinalTotal">សរុបចុងក្រោយ</span>
+                  <span id="calcTotalRevenueVal" class="calc-val accent-val" style="color: #38bdf8;">$0.00</span>
+                </div>
+                <div class="calc-divider">|</div>
+                <div class="calc-item">
+                  <span class="calc-label" data-i18n="calcEstimatedProfit">ប្រាក់ចំណេញ</span>
                   <span id="calcTotalProfitVal" class="calc-val profit-val">+$0.00 (0%)</span>
                 </div>
               </div>
